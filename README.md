@@ -1,11 +1,12 @@
-# 🔒 ResolveNOW: Secure AI-Powered Online Dispute Resolution Platform
+# ResolveNOW - AI-Powered Online Dispute Resolution Platform (Static Version)
 
-A comprehensive, **enterprise-grade secure** web-based platform that democratizes justice by making dispute resolution simple, intelligent, and accessible for everyone through AI-powered mediation and case management.
+ResolveNOW is a comprehensive, AI-powered online dispute resolution platform that democratizes access to justice through intelligent mediation, automated case analysis, and fair resolution outcomes for everyone.
+
+**Note: This is currently a static version with all backend logic and scripts removed. The pages showcase the UI/UX design and can serve as a foundation for future development.**
 
 ## 🛡️ **SECURITY TRANSFORMATION COMPLETE**
 
 This application has undergone a **complete security overhaul**, transforming it from a vulnerable prototype into a **production-ready, enterprise-grade secure platform**. See [SECURITY.md](SECURITY.md) for detailed security documentation.
-
 ## 🌟 Features
 
 ### Core Functionality
