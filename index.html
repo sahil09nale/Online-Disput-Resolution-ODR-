@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResolveNOW - AI-Powered Online Dispute Resolution</title>
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Secure Supabase Authentication System -->
+    <script src="js/config.js"></script>
+    <script type="module" src="js/supabase-config.js"></script>
+    <script type="module" src="js/supabase-auth.js"></script>
+    <script src="js/auth-manager.js"></script>
+    <script src="js/route-guard.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>ResolveNOW</h2>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <a href="#features">Features</a>
+                <a href="pages/how-it-works.html">How It Works</a>
+                <a href="pages/about.html">About</a>
+                <a href="pages/faq.html">FAQ</a>
+                <a href="pages/contact.html">Contact</a>
+                <!-- Default (not logged in) -->
+                <a href="pages/login.html" class="btn-primary" id="signInBtn">Sign In</a>
+                <a href="pages/register.html" class="btn-secondary" id="getStartedBtn">Get Started</a>
+                <!-- Logged in -->
+                <span id="userWelcome" style="display: none; color: var(--medium-gray); font-weight: 500;"></span>
+                <a href="pages/dashboard.html" class="btn-primary" id="dashboardBtn" style="display: none;">Dashboard</a>
+                <a href="#" class="btn-secondary" id="logoutBtn" style="display: none;" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>AI-Powered Dispute Resolution Platform</h1>
+            <p>Democratizing access to justice through intelligent mediation, automated case analysis, and fair resolution outcomes for everyone</p>
+            <div class="hero-buttons" id="heroButtons">
+                <!-- Default (not logged in) -->
+                <a href="pages/register.html" class="btn-primary" id="startCaseBtn">Start Your Case</a>
+                <a href="#how-it-works" class="btn-secondary">Learn More</a>
+                <!-- Logged in -->
+                <a href="pages/submit-dispute.html" class="btn-primary" id="newDisputeBtn" style="display: none;">Submit New Dispute</a>
+                <a href="pages/dashboard.html" class="btn-secondary" id="viewDashboardBtn" style="display: none;">View Dashboard</a>
+            </div>
+        </div>
+    </header>
+
+    <section style="background: var(--off-white); padding: 80px 0;">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h2 style="color: var(--deep-blue); font-size: 2.5rem; margin-bottom: 16px;">🤖 AI Dispute Assistant</h2>
+                <p style="color: var(--medium-gray); font-size: 18px;">Get instant guidance on your dispute resolution options</p>
+            </div>
+            
+            <div style="max-width: 800px; margin: 0 auto; background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--light-gray);">
+                <div id="chatbox" style="height: 400px; overflow-y: auto; padding: 24px; border-bottom: 1px solid var(--light-gray);">
+                    <div class="bot-message" style="background: white; padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border-left: 4px solid var(--teal); box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="font-weight: 600; color: var(--teal); margin-bottom: 8px;">🤖 AI Assistant</div>
+                        <div style="color: #1f2937; line-height: 1.6;">Welcome to ResolveNOW! I'm here to help you understand your dispute resolution options. Please describe your situation and I'll provide personalized guidance.</div>
+                    </div>
+                </div>
+                
+                <div style="padding: 24px; display: flex; gap: 12px; align-items: center;">
+                    <input id="userInput" type="text" placeholder="Describe your dispute situation..." 
+                           style="flex: 1; padding: 12px 16px; border: 2px solid var(--light-gray); border-radius: var(--radius-md); font-size: 16px; outline: none; transition: border-color 0.2s ease;"
+                           onkeypress="if(event.key==='Enter') sendMessage()">
+                    <button id="sendBtn" onclick="sendMessage()" class="btn-primary" style="padding: 12px 24px; white-space: nowrap;">Send Message</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div style="font-size: 48px; margin-bottom: 20px; color: var(--teal);">🔐</div>
+                    <h3>Secure Multi-Role Platform</h3>
+                    <p>Role-based access for individuals, legal professionals, mediators, and organizations with enterprise-grade security</p>
+                </div>
+                <div class="feature-card">
+                    <div style="font-size: 48px; margin-bottom: 20px; color: var(--teal);">📋</div>
+                    <h3>Intelligent Case Submission</h3>
+                    <p>Guided dispute filing with smart forms, evidence management, and automated document processing</p>
+                </div>
+                <div class="feature-card">
+                    <div style="font-size: 48px; margin-bottom: 20px; color: var(--teal);">🤖</div>
+                    <h3>AI-Powered Case Analysis</h3>
+                    <p>Advanced machine learning for case categorization, risk assessment, and outcome prediction</p>
+                </div>
+                <div class="feature-card">
+                    <div style="font-size: 48px; margin-bottom: 20px; color: var(--teal);">💡</div>
+                    <h3>Smart Settlement Engine</h3>
+                    <p>Data-driven settlement recommendations based on case precedents and successful resolution patterns</p>
+                </div>
+                <div class="feature-card">
+                    <div style="font-size: 48px; margin-bottom: 20px; color: var(--teal);">👥</div>
+                    <h3>AI Mediation Assistant</h3>
+                    <p>Real-time guidance for mediators with sentiment analysis, communication insights, and process optimization</p>
+                </div>
+                <div class="feature-card">
+                    <div style="font-size: 48px; margin-bottom: 20px; color: var(--teal);">🔗</div>
+                    <h3>Immutable Case Records</h3>
+                    <p>Blockchain-secured documentation ensuring transparency, authenticity, and legal compliance</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Create Account</h3>
+                    <p>Register with your role and get verified access to the platform</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>File Your Case</h3>
+                    <p>Submit dispute details with supporting evidence and documentation</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>AI Processing</h3>
+                    <p>Advanced algorithms analyze your case and suggest optimal resolution paths</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Expert Mediation</h3>
+                    <p>Qualified mediators facilitate discussions with AI-powered insights</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <h3>Final Agreement</h3>
+                    <p>Secure digital agreements with blockchain verification and legal validity</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 ResolveNOW. Democratizing Justice Through Technology. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script src="js/dark-mode.js"></script>
+    
+    <script>
+        // Clean up stale sessions
+        async function cleanupStaleSession() {
+            try {
+                if (window.authManager && window.authManager.supabase) {
+                    const { data: { user } } = await window.authManager.supabase.auth.getUser();
+                    if (!user) {
+                        // No valid Supabase session, clear localStorage
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('user_data');
+                        localStorage.removeItem('userData');
+                        localStorage.removeItem('auth_token');
+                    }
+                }
+            } catch (error) {
+                console.log('Session cleanup:', error.message);
+                // Clear localStorage on any auth error
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('user_data');
+                localStorage.removeItem('userData');
+                localStorage.removeItem('auth_token');
+            }
+        }
+        
+        // Update UI based on authentication status
+        async function updateUIForAuth() {
+            // Wait for auth manager to initialize
+            let attempts = 0;
+            while (!window.authManager && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            // Clean up stale sessions first
+            await cleanupStaleSession();
+            
+            const isLoggedIn = window.authManager && window.authManager.isAuthenticated();
+            const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+            
+            if (isLoggedIn) {
+                // Show logged-in elements
+                document.getElementById('userWelcome').style.display = 'inline';
+                document.getElementById('userWelcome').textContent = `Welcome, ${userData.profile?.full_name || userData.user_metadata?.full_name || 'User'}`;
+                document.getElementById('dashboardBtn').style.display = 'inline';
+                document.getElementById('logoutBtn').style.display = 'inline';
+                document.getElementById('newDisputeBtn').style.display = 'inline';
+                document.getElementById('viewDashboardBtn').style.display = 'inline';
+                
+                // Hide logged-out elements
+                document.getElementById('signInBtn').style.display = 'none';
+                document.getElementById('getStartedBtn').style.display = 'none';
+                document.getElementById('startCaseBtn').style.display = 'none';
+            } else {
+                // Show logged-out elements
+                document.getElementById('signInBtn').style.display = 'inline';
+                document.getElementById('getStartedBtn').style.display = 'inline';
+                document.getElementById('startCaseBtn').style.display = 'inline';
+                
+                // Hide logged-in elements
+                document.getElementById('userWelcome').style.display = 'none';
+                document.getElementById('dashboardBtn').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'none';
+                document.getElementById('newDisputeBtn').style.display = 'none';
+                document.getElementById('viewDashboardBtn').style.display = 'none';
+            }
+        }
+        
+        async function logout() {
+            try {
+                if (window.authManager) {
+                    await window.authManager.logout();
+                } else {
+                    localStorage.clear();
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+        
+        // Update UI when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(updateUIForAuth, 1000);
+        });
+    </script>
+</body>
+</html>

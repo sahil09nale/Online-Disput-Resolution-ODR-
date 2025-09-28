@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ResolveNOW</title>
+    <link rel="stylesheet" href="../styles.css">
+    
+    <!-- Secure Authentication System -->
+    <script src="../js/config.js"></script>
+    <script src="../js/auth-manager.js"></script>
+    <script src="../js/case-manager.js"></script>
+    <script src="../js/route-guard.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html"><h2>ResolveNOW</h2></a>
+            </div>
+            <div class="nav-menu">
+                <span id="userWelcome" style="color: var(--medium-gray); font-weight: 500;"></span>
+                <a href="submit-dispute.html" class="btn-primary">New Case</a>
+                <a href="profile.html">Profile</a>
+                <a href="#" onclick="logout()" class="btn-secondary">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard">
+        <div class="dashboard-header">
+            <div>
+                <h1>Dashboard</h1>
+                <p style="color: var(--medium-gray); margin-top: 8px;">Manage your cases and track resolution progress</p>
+            </div>
+            <div>
+                <a href="submit-dispute.html" class="btn-primary">Submit New Case</a>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCases">0</div>
+                <div>Total Cases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeCases">0</div>
+                <div>Active Cases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="resolvedCases">0</div>
+                <div>Resolved Cases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pendingCases">0</div>
+                <div>Pending Review</div>
+            </div>
+        </div>
+
+        <div class="cases-table">
+            <div style="padding: 24px 24px 0;">
+                <h3>Recent Cases</h3>
+                <p style="color: var(--medium-gray); margin-top: 4px; font-size: 14px;">Track and manage your dispute resolution cases</p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Case ID</th>
+                        <th>Case Title</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Date Filed</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="casesTableBody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 48px 24px; color: var(--medium-gray);">
+                            <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">📋</div>
+                            <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">No cases found</div>
+                            <div style="font-size: 14px;">
+                                <a href="submit-dispute.html" style="color: var(--teal); text-decoration: none; font-weight: 500;">Submit your first case</a> to get started
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="mediatorSection" style="display: none; margin-top: 40px;">
+            <div class="cases-table">
+                <div style="padding: 24px 24px 0;">
+                    <h3>Mediation Queue</h3>
+                    <p style="color: var(--medium-gray); margin-top: 4px; font-size: 14px;">Cases assigned for your mediation expertise</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Parties Involved</th>
+                            <th>Dispute Type</th>
+                            <th>Priority Level</th>
+                            <th>Assigned Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mediationCasesBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 48px 24px; color: var(--medium-gray);">
+                                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">👥</div>
+                                <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">No mediation cases assigned</div>
+                                <div style="font-size: 14px;">Cases will appear here when assigned to you</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="lawyerSection" style="display: none; margin-top: 40px;">
+            <div class="cases-table">
+                <div style="padding: 24px 24px 0;">
+                    <h3>Client Cases</h3>
+                    <p style="color: var(--medium-gray); margin-top: 4px; font-size: 14px;">Cases where you're providing legal representation</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Client Name</th>
+                            <th>Dispute Type</th>
+                            <th>Case Value</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lawyerCasesBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 48px 24px; color: var(--medium-gray);">
+                                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">⚖️</div>
+                                <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">No client cases</div>
+                                <div style="font-size: 14px;">Client cases will appear here when you're assigned as legal counsel</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Authentication check handled by route guard
+
+        // User welcome will be set by auth manager when ready
+
+        if (userData.userType === 'mediator') {
+            document.getElementById('mediatorSection').style.display = 'block';
+            loadMediationCases();
+        } else if (userData.userType === 'lawyer') {
+            document.getElementById('lawyerSection').style.display = 'block';
+            loadLawyerCases();
+        }
+
+        async function loadCases() {
+            let cases = [];
+            
+            try {
+                // Load from server only
+                if (!window.authManager || !window.authManager.isAuthenticated()) {
+                    throw new Error('Not authenticated');
+                }
+                
+                const response = await window.authManager.authenticatedFetch('/api/cases');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch cases');
+                }
+                
+                const result = await response.json();
+                cases = result.cases || [];
+                
+            } catch (error) {
+                console.error('Error loading cases:', error);
+                cases = [];
+            }
+            
+            const tbody = document.getElementById('casesTableBody');
+            
+            if (cases.length === 0) return;
+
+            tbody.innerHTML = '';
+            
+            cases.forEach(case_ => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600; color: var(--deep-blue);">${case_.id}</td>
+                    <td>${case_.description?.substring(0, 50) || 'Case Description'}...</td>
+                    <td><span style="background: rgba(44, 165, 141, 0.1); color: var(--teal); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${case_.dispute_type || 'General'}</span></td>
+                    <td><span class="status-badge status-${(case_.status || 'pending').toLowerCase()}">${case_.status || 'Pending'}</span></td>
+                    <td style="color: var(--medium-gray);">${new Date(case_.created_at || Date.now()).toLocaleDateString()}</td>
+                    <td>
+                        <a href="case-details.html?id=${case_.id}" style="color: var(--teal); text-decoration: none; font-weight: 500;">View Details</a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Update statistics
+            document.getElementById('totalCases').textContent = cases.length;
+            document.getElementById('activeCases').textContent = cases.filter(c => ['Active', 'In Review', 'In Mediation'].includes(c.status || 'Pending')).length;
+            document.getElementById('resolvedCases').textContent = cases.filter(c => (c.status || 'Pending') === 'Resolved').length;
+            document.getElementById('pendingCases').textContent = cases.filter(c => (c.status || 'Pending') === 'Pending').length;
+        }
+
+        function loadMediationCases() {
+            const mediationCases = [
+                {
+                    id: 'MED001',
+                    parties: 'John Doe vs ABC Corporation',
+                    type: 'Employment Dispute',
+                    priority: 'High',
+                    assignedDate: new Date().toISOString()
+                },
+                {
+                    id: 'MED002',
+                    parties: 'Sarah Johnson vs XYZ Services',
+                    type: 'Consumer Complaint',
+                    priority: 'Medium',
+                    assignedDate: new Date(Date.now() - 86400000).toISOString()
+                }
+            ];
+
+            const tbody = document.getElementById('mediationCasesBody');
+            if (mediationCases.length === 0) return;
+
+            tbody.innerHTML = '';
+            mediationCases.forEach(case_ => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600; color: var(--deep-blue);">${case_.id}</td>
+                    <td>${case_.parties}</td>
+                    <td><span style="background: rgba(44, 165, 141, 0.1); color: var(--teal); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${case_.type}</span></td>
+                    <td><span class="status-badge status-${case_.priority.toLowerCase() === 'high' ? 'pending' : 'active'}">${case_.priority}</span></td>
+                    <td style="color: var(--medium-gray);">${new Date(case_.assignedDate).toLocaleDateString()}</td>
+                    <td>
+                        <a href="mediation.html?id=${case_.id}" style="color: var(--teal); text-decoration: none; font-weight: 500;">Start Mediation</a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function loadLawyerCases() {
+            const lawyerCases = [
+                {
+                    id: 'LAW001',
+                    client: 'Michael Chen',
+                    type: 'Contract Dispute',
+                    value: '$25,000',
+                    status: 'Active'
+                }
+            ];
+
+            const tbody = document.getElementById('lawyerCasesBody');
+            if (lawyerCases.length === 0) return;
+
+            tbody.innerHTML = '';
+            lawyerCases.forEach(case_ => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600; color: var(--deep-blue);">${case_.id}</td>
+                    <td>${case_.client}</td>
+                    <td><span style="background: rgba(44, 165, 141, 0.1); color: var(--teal); padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${case_.type}</span></td>
+                    <td style="font-weight: 600; color: var(--deep-blue);">${case_.value}</td>
+                    <td><span class="status-badge status-${case_.status.toLowerCase()}">${case_.status}</span></td>
+                    <td>
+                        <a href="case-details.html?id=${case_.id}" style="color: var(--teal); text-decoration: none; font-weight: 500;">Review Case</a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function logout() {
+            try {
+                if (window.authManager) {
+                    await window.authManager.logout();
+                } else {
+                    // Fallback: clear localStorage and redirect
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userData');
+                    localStorage.removeItem('user_data');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Force logout anyway
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Load cases on page load and refresh every 30 seconds
+        loadCases();
+        setInterval(loadCases, 30000);
+    </script>
+    <!-- Secure Supabase Authentication Service -->
+    <script src="../js/config.js"></script>
+    <script type="module" src="../js/supabase-config.js"></script>
+    <script type="module" src="../js/supabase-auth.js"></script>
+    <script src="../js/auth-manager.js"></script>
+    <script src="../js/dark-mode.js"></script>
+    
+</body>
+</html>

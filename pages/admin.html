@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ResolveNOW</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>ResolveNOW Admin</h2>
+            </div>
+            <div class="nav-menu">
+                <span style="color: var(--medium-gray); font-weight: 500;">Admin Panel</span>
+                <a href="#" onclick="logout()" class="btn-secondary">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div style="margin-top: 80px; padding: 40px 24px; max-width: 1400px; margin-left: auto; margin-right: auto;">
+        <div style="margin-bottom: 40px;">
+            <h1 style="color: var(--deep-blue); font-size: 32px; font-weight: 700; margin-bottom: 8px;">Admin Dashboard</h1>
+            <p style="color: var(--medium-gray);">Platform management and oversight</p>
+        </div>
+
+        <!-- Platform Statistics -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 40px;">
+            <div class="stat-card">
+                <div class="stat-number">1,247</div>
+                <div>Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">89</div>
+                <div>Active Cases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">456</div>
+                <div>Resolved Cases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">23</div>
+                <div>Active Mediators</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">95%</div>
+                <div>Success Rate</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+            <!-- User Management -->
+            <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--light-gray);">
+                <div style="padding: 24px 24px 0;">
+                    <h3 style="color: var(--deep-blue); font-size: 20px; font-weight: 600; margin-bottom: 8px;">User Management</h3>
+                    <p style="color: var(--medium-gray); font-size: 14px; margin-bottom: 20px;">Manage platform users and their roles</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--off-white);">
+                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--charcoal); text-transform: uppercase;">User</th>
+                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--charcoal); text-transform: uppercase;">Role</th>
+                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--charcoal); text-transform: uppercase;">Status</th>
+                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--charcoal); text-transform: uppercase;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--light-gray);">
+                            <td style="padding: 16px 20px;">
+                                <div style="font-weight: 500; color: var(--charcoal);">John Doe</div>
+                                <div style="font-size: 14px; color: var(--medium-gray);">john@example.com</div>
+                            </td>
+                            <td style="padding: 16px 20px; color: var(--medium-gray);">Individual</td>
+                            <td style="padding: 16px 20px;"><span class="status-badge status-active">Active</span></td>
+                            <td style="padding: 16px 20px;">
+                                <button onclick="editUser('john')" style="background: none; border: none; color: var(--teal); cursor: pointer; font-weight: 500;">Edit</button>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--light-gray);">
+                            <td style="padding: 16px 20px;">
+                                <div style="font-weight: 500; color: var(--charcoal);">Jane Smith</div>
+                                <div style="font-size: 14px; color: var(--medium-gray);">jane@example.com</div>
+                            </td>
+                            <td style="padding: 16px 20px; color: var(--medium-gray);">Mediator</td>
+                            <td style="padding: 16px 20px;"><span class="status-badge status-active">Active</span></td>
+                            <td style="padding: 16px 20px;">
+                                <button onclick="editUser('jane')" style="background: none; border: none; color: var(--teal); cursor: pointer; font-weight: 500;">Edit</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="padding: 20px;">
+                    <button class="btn-secondary" style="width: 100%;">View All Users</button>
+                </div>
+            </div>
+
+            <!-- Case Management -->
+            <div style="background: white; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--light-gray);">
+                <div style="padding: 24px 24px 0;">
+                    <h3 style="color: var(--deep-blue); font-size: 20px; font-weight: 600; margin-bottom: 8px;">Case Management</h3>
+                    <p style="color: var(--medium-gray); font-size: 14px; margin-bottom: 20px;">Monitor and manage dispute cases</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--off-white);">
+                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--charcoal); text-transform: uppercase;">Case ID</th>
+                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--charcoal); text-transform: uppercase;">Type</th>
+                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--charcoal); text-transform: uppercase;">Status</th>
+                            <th style="padding: 12px 20px; text-align: left; font-size: 12px; font-weight: 600; color: var(--charcoal); text-transform: uppercase;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid var(--light-gray);">
+                            <td style="padding: 16px 20px; font-weight: 600; color: var(--deep-blue);">ODR001</td>
+                            <td style="padding: 16px 20px; color: var(--medium-gray);">Employment</td>
+                            <td style="padding: 16px 20px;"><span class="status-badge status-active">Active</span></td>
+                            <td style="padding: 16px 20px;">
+                                <button onclick="assignMediator('ODR001')" style="background: none; border: none; color: var(--teal); cursor: pointer; font-weight: 500;">Assign</button>
+                            </td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid var(--light-gray);">
+                            <td style="padding: 16px 20px; font-weight: 600; color: var(--deep-blue);">ODR002</td>
+                            <td style="padding: 16px 20px; color: var(--medium-gray);">Consumer</td>
+                            <td style="padding: 16px 20px;"><span class="status-badge status-pending">Pending</span></td>
+                            <td style="padding: 16px 20px;">
+                                <button onclick="assignMediator('ODR002')" style="background: none; border: none; color: var(--teal); cursor: pointer; font-weight: 500;">Assign</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="padding: 20px;">
+                    <button class="btn-secondary" style="width: 100%;">View All Cases</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Analytics -->
+        <div style="background: white; padding: 32px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--light-gray); margin-top: 40px;">
+            <h3 style="color: var(--deep-blue); font-size: 20px; font-weight: 600; margin-bottom: 24px;">System Analytics</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+                <div>
+                    <h4 style="color: var(--charcoal); font-size: 16px; font-weight: 600; margin-bottom: 16px;">Case Resolution Times</h4>
+                    <div style="background: var(--off-white); padding: 20px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray);">Average:</span>
+                            <span style="color: var(--charcoal); font-weight: 600;">8.5 days</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray);">Fastest:</span>
+                            <span style="color: var(--success-green); font-weight: 600;">2 days</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray);">Slowest:</span>
+                            <span style="color: var(--warning-orange); font-weight: 600;">21 days</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="color: var(--charcoal); font-size: 16px; font-weight: 600; margin-bottom: 16px;">User Activity</h4>
+                    <div style="background: var(--off-white); padding: 20px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray);">Daily Active:</span>
+                            <span style="color: var(--charcoal); font-weight: 600;">342</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray);">New Signups:</span>
+                            <span style="color: var(--success-green); font-weight: 600;">23</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray);">Retention Rate:</span>
+                            <span style="color: var(--teal); font-weight: 600;">87%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="color: var(--charcoal); font-size: 16px; font-weight: 600; margin-bottom: 16px;">AI Performance</h4>
+                    <div style="background: var(--off-white); padding: 20px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray);">Accuracy:</span>
+                            <span style="color: var(--success-green); font-weight: 600;">94.2%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray);">Processing Time:</span>
+                            <span style="color: var(--teal); font-weight: 600;">1.3s</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray);">Success Rate:</span>
+                            <span style="color: var(--success-green); font-weight: 600;">91.8%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/script.js"></script>
+</body>
+</html>

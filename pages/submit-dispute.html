@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Dispute - ResolveNOW</title>
+    <link rel="stylesheet" href="../styles.css">
+    
+    <!-- Secure Authentication System -->
+    <script src="../js/config.js"></script>
+    <script src="../js/auth-manager.js"></script>
+    <script src="../js/case-manager.js"></script>
+    <script src="../js/file-upload.js"></script>
+    <script src="../js/route-guard.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="dashboard.html"><h2>ResolveNOW</h2></a>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-top: 100px; max-width: 800px;">
+        <h1 style="text-align: center; margin-bottom: 2rem;">Submit New Dispute</h1>
+        
+        <form id="disputeForm" style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div class="form-group">
+                <label for="disputeTitle">Dispute Title</label>
+                <input type="text" id="disputeTitle" name="disputeTitle" required placeholder="Brief description of your dispute">
+            </div>
+
+            <div class="form-group">
+                <label for="disputeType">Dispute Type</label>
+                <select id="disputeType" name="disputeType" required>
+                    <option value="">Select Dispute Type</option>
+                    <option value="consumer">Consumer Complaint</option>
+                    <option value="employment">Employment Issue</option>
+                    <option value="contract">Contract Dispute</option>
+                    <option value="property">Property Dispute</option>
+                    <option value="family">Family Matter</option>
+                    <option value="business">Business Dispute</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="otherParty">Other Party Information</label>
+                <input type="text" id="otherParty" name="otherParty" required placeholder="Name of the other party">
+            </div>
+
+            <div class="form-group">
+                <label for="otherPartyEmail">Other Party Email (Optional)</label>
+                <input type="email" id="otherPartyEmail" name="otherPartyEmail" placeholder="Email to invite them to respond">
+            </div>
+
+            <div class="form-group">
+                <label for="disputeAmount">Dispute Amount ($)</label>
+                <input type="number" id="disputeAmount" name="disputeAmount" min="0" step="0.01" placeholder="0.00">
+            </div>
+
+            <div class="form-group">
+                <label for="incidentDate">Date of Incident</label>
+                <input type="date" id="incidentDate" name="incidentDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Detailed Description</label>
+                <textarea id="description" name="description" rows="6" required placeholder="Provide a detailed description of the dispute, including what happened, when, and what resolution you're seeking..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="desiredOutcome">Desired Outcome</label>
+                <textarea id="desiredOutcome" name="desiredOutcome" rows="3" required placeholder="What would you like to achieve from this dispute resolution?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="evidence">Upload Evidence</label>
+                <input type="file" id="evidence" name="evidence" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp3,.mp4,.wav,.txt">
+                <small style="color: #6b7280; display: block; margin-top: 0.5rem;">
+                    Supported: Images, Documents, Audio, Video (Max 10MB per file)
+                </small>
+                
+                <!-- Upload Progress -->
+                <div id="uploadContainer" style="display: none; margin-top: 1rem;">
+                    <div style="background: #f3f4f6; border-radius: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+                        <div id="uploadProgress" style="background: var(--teal); height: 8px; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.875rem; color: #6b7280;">
+                        <span id="uploadProgressText">0%</span>
+                        <span id="uploadStatus">Uploading...</span>
+                    </div>
+                </div>
+                
+                <!-- Uploaded Files List -->
+                <div id="uploadedFiles" style="margin-top: 1rem;"></div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="urgentCase" name="urgentCase">
+                    This is an urgent case requiring immediate attention
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="agreeTerms" required>
+                    I agree that the information provided is accurate and I consent to the dispute resolution process
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                <button type="button" onclick="saveDraft()" class="btn-secondary">Save as Draft</button>
+                <button type="submit" class="btn-primary">Submit Dispute</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Secure Supabase Evidence Manager -->
+    <script type="module" src="../js/supabase-config.js"></script>
+    <script type="module" src="../js/supabase-storage.js"></script>
+
+    <script>
+        // Authentication check handled by route guard
+
+        function generateCaseId() {
+            return 'ODR' + Date.now().toString().slice(-6);
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                if (window.authManager) {
+                    await window.authManager.logout();
+                } else {
+                    // Fallback logout
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('user_data');
+                    localStorage.removeItem('auth_token');
+                }
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Force logout anyway
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+
+        function saveDraft() {
+            const formData = new FormData(document.getElementById('disputeForm'));
+            const draftData = Object.fromEntries(formData.entries());
+            draftData.isDraft = true;
+            draftData.savedAt = new Date().toISOString();
+            
+            localStorage.setItem('disputeDraft', JSON.stringify(draftData));
+            alert('Draft saved successfully!');
+        }
+
+        function loadDraft() {
+            const draft = JSON.parse(localStorage.getItem('disputeDraft') || '{}');
+            if (draft.isDraft) {
+                Object.keys(draft).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element && key !== 'isDraft' && key !== 'savedAt') {
+                        if (element.type === 'checkbox') {
+                            element.checked = draft[key] === 'on';
+                        } else {
+                            element.value = draft[key];
+                        }
+                    }
+                });
+            }
+        }
+
+        // File upload handling
+        let currentTempCaseId = null;
+        document.getElementById('evidence').addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            const uploadContainer = document.getElementById('uploadContainer');
+            const uploadedFilesDiv = document.getElementById('uploadedFiles');
+            
+            uploadContainer.style.display = 'block';
+            
+            for (let file of files) {
+                try {
+                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                    if (!currentTempCaseId) {
+                        currentTempCaseId = 'temp_' + Date.now();
+                    }
+                    
+                    const fileData = await window.FileUploadManager.uploadFile(file, currentTempCaseId, userData.email);
+                    
+                    // Add to uploaded files list
+                    const fileDiv = document.createElement('div');
+                    fileDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f9fafb; border-radius: 6px; margin-bottom: 0.5rem;';
+                    fileDiv.innerHTML = `
+                        <div>
+                            <span style="font-weight: 500;">${file.name}</span>
+                            <span style="color: #6b7280; font-size: 0.875rem; margin-left: 0.5rem;">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" style="color: #ef4444; background: none; border: none; cursor: pointer;">✕</button>
+                    `;
+                    uploadedFilesDiv.appendChild(fileDiv);
+                    
+                } catch (error) {
+                    alert(`Failed to upload ${file.name}: ${error.message}`);
+                }
+            }
+            
+            uploadContainer.style.display = 'none';
+        });
+
+        document.getElementById('disputeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const disputeData = Object.fromEntries(formData.entries());
+            
+            // Generate case data
+            const caseData = {
+                id: generateCaseId(),
+                title: disputeData.disputeTitle,
+                type: disputeData.disputeType,
+                status: 'Pending',
+                submittedAt: new Date().toISOString(),
+                ...disputeData
+            };
+
+            // Reassign any temp evidence to the final case ID and load files
+            if (currentTempCaseId) {
+                try {
+                    await window.FileUploadManager.reassignFiles(currentTempCaseId, caseData.id);
+                } catch (err) {
+                    console.error('Failed to reassign evidence:', err);
+                }
+            }
+
+            const filesForCase = await window.FileUploadManager.getFiles(caseData.id);
+            caseData.hasEvidence = (filesForCase && filesForCase.length > 0);
+            caseData.evidenceCount = filesForCase ? filesForCase.length : 0;
+            caseData.evidenceFiles = (filesForCase || []).map(f => ({ 
+                fileName: f.fileName, 
+                uploadedAt: f.uploadedAt,
+                downloadURL: f.downloadURL 
+            }));
+
+            // Submit to server only
+            try {
+                if (!window.authManager || !window.authManager.isAuthenticated()) {
+                    throw new Error('Not authenticated');
+                }
+                
+                const response = await window.authManager.authenticatedFetch('/api/cases/submit', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        disputeType: caseData.type,
+                        disputeAmount: parseFloat(caseData.disputeAmount) || 0,
+                        description: caseData.description,
+                        respondentName: caseData.otherParty,
+                        respondentEmail: caseData.otherPartyEmail,
+                        evidenceFiles: caseData.evidenceFiles || []
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to submit case');
+                }
+                
+                const result = await response.json();
+                caseData.id = result.case.id; // Use server-generated ID
+                
+            } catch (error) {
+                console.error('Failed to submit case:', error);
+                alert('Failed to submit case: ' + error.message);
+                return;
+            }
+
+            // Clear draft only
+            localStorage.removeItem('disputeDraft');
+
+            // Show AI analysis simulation
+            showAIAnalysis(caseData);
+        });
+
+        function showAIAnalysis(caseData) {
+            const analysisModal = document.createElement('div');
+            analysisModal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); display: flex; align-items: center;
+                justify-content: center; z-index: 1000;
+            `;
+            
+            analysisModal.innerHTML = `
+                <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; text-align: center;">
+                    <h3 style="color: #2563eb; margin-bottom: 1rem;">🤖 AI Analysis in Progress</h3>
+                    <div style="margin: 1.5rem 0;">
+                        <div style="border: 3px solid #f3f4f6; border-top: 3px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                    </div>
+                    <p style="color: #6b7280; margin-bottom: 1rem;">Analyzing your dispute...</p>
+                    <div id="analysisSteps" style="text-align: left; font-size: 0.875rem; color: #374151;">
+                        <div>✓ Categorizing dispute type</div>
+                        <div>✓ Extracting key information</div>
+                        <div>✓ Identifying potential issues</div>
+                        <div>⏳ Generating settlement suggestions...</div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(analysisModal);
+
+            // Add CSS animation
+            const style = document.createElement('style');
+            style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+            document.head.appendChild(style);
+
+            setTimeout(() => {
+                document.body.removeChild(analysisModal);
+                alert(`Dispute submitted successfully!\n\nCase ID: ${caseData.id}\n\nAI Analysis Complete:\n- Dispute Type: ${caseData.type}\n- Estimated Resolution Time: 7-14 days\n- Recommended Action: Mediation\n\nYou will be notified when the other party responds.`);
+                window.location.href = 'dashboard.html';
+            }, 3000);
+        }
+
+
+
+        // Map dispute types to departments
+        function getDepartmentByDisputeType(disputeType) {
+            const mapping = {
+                'consumer': 'consumer',
+                'employment': 'employment', 
+                'contract': 'contract',
+                'property': 'property',
+                'business': 'business',
+                'family': 'family',
+                'other': 'consumer' // Default to consumer
+            };
+            return mapping[disputeType] || 'consumer';
+        }
+        
+        // Load draft on page load
+        loadDraft();
+    </script>
+    <!-- Supabase Authentication Service -->
+    <script type="module" src="../js/supabase-auth.js"></script>
+    <script src="../js/dark-mode.js"></script>
+</body>
+</html>

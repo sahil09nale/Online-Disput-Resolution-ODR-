@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediation Dashboard - ResolveNOW</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="dashboard.html"><h2>ResolveNOW</h2></a>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="margin-top: 100px; max-width: 1200px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1>Mediation Dashboard</h1>
+            <div>
+                <span class="status-badge status-active">Active Session</span>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+            <!-- Main Content -->
+            <div>
+                <!-- Case Summary -->
+                <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem; color: #1e293b;">Case Summary</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div><strong>Case ID:</strong> MED001</div>
+                        <div><strong>Type:</strong> Employment Dispute</div>
+                        <div><strong>Parties:</strong> John Doe vs ABC Corp</div>
+                        <div><strong>Amount:</strong> $15,000</div>
+                    </div>
+                    <p style="color: #6b7280; line-height: 1.6;">
+                        Employee claims wrongful termination and seeks compensation for lost wages and emotional distress. 
+                        Company disputes the claim, stating termination was due to performance issues.
+                    </p>
+                </div>
+
+                <!-- Communication Panel -->
+                <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+                    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
+                        <h3 style="color: #1e293b;">Mediation Chat</h3>
+                    </div>
+                    
+                    <div id="chatMessages" style="height: 400px; overflow-y: auto; padding: 1rem;">
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 4px solid #2563eb;">
+                            <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Mediator (You)</div>
+                            <p style="color: #374151;">Welcome to the mediation session. I've reviewed both parties' submissions and AI analysis. Let's work together to find a fair resolution.</p>
+                            <small style="color: #6b7280;">10:30 AM</small>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                            <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">John Doe</div>
+                            <p style="color: #374151;">Thank you. I believe my termination was unjust and I have evidence to support my claim.</p>
+                            <small style="color: #6b7280;">10:32 AM</small>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                            <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">ABC Corp Representative</div>
+                            <p style="color: #374151;">We followed proper procedures. The employee's performance was consistently below standards.</p>
+                            <small style="color: #6b7280;">10:35 AM</small>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 1rem; border-top: 1px solid #e5e7eb;">
+                        <div style="display: flex; gap: 1rem;">
+                            <input type="text" id="messageInput" placeholder="Type your message..." 
+                                   style="flex: 1; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
+                            <button onclick="sendMessage()" class="btn-primary">Send</button>
+                        </div>
+                        <div style="margin-top: 0.5rem;">
+                            <button onclick="suggestSettlement()" class="btn-secondary" style="margin-right: 0.5rem;">Suggest Settlement</button>
+                            <button onclick="scheduleBreak()" class="btn-secondary">Schedule Break</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evidence Review -->
+                <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 1rem; color: #1e293b;">Evidence & Documents</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div style="border: 2px dashed #e5e7eb; padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📄</div>
+                            <div style="font-weight: 600; margin-bottom: 0.25rem;">Employment Contract</div>
+                            <small style="color: #6b7280;">Submitted by John Doe</small>
+                        </div>
+                        <div style="border: 2px dashed #e5e7eb; padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                            <div style="font-weight: 600; margin-bottom: 0.25rem;">Performance Reviews</div>
+                            <small style="color: #6b7280;">Submitted by ABC Corp</small>
+                        </div>
+                        <div style="border: 2px dashed #e5e7eb; padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📧</div>
+                            <div style="font-weight: 600; margin-bottom: 0.25rem;">Email Communications</div>
+                            <small style="color: #6b7280;">Submitted by John Doe</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Co-Pilot Sidebar -->
+            <div>
+                <!-- AI Insights -->
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem; color: #1e293b;">🤖 AI Co-Pilot</h3>
+                    
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #0ea5e9;">
+                        <h4 style="font-size: 0.875rem; color: #0c4a6e; margin-bottom: 0.5rem;">Key Issues Identified</h4>
+                        <ul style="font-size: 0.875rem; color: #075985; margin: 0; padding-left: 1rem;">
+                            <li>Lack of documented warnings</li>
+                            <li>Inconsistent performance metrics</li>
+                            <li>Timing of termination</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid #22c55e;">
+                        <h4 style="font-size: 0.875rem; color: #14532d; margin-bottom: 0.5rem;">Recommended Approach</h4>
+                        <p style="font-size: 0.875rem; color: #166534; margin: 0;">Focus on finding middle ground. Both parties have valid concerns that can be addressed.</p>
+                    </div>
+
+                    <div style="background: #fefce8; padding: 1rem; border-radius: 8px; border-left: 4px solid #eab308;">
+                        <h4 style="font-size: 0.875rem; color: #713f12; margin-bottom: 0.5rem;">Sentiment Analysis</h4>
+                        <div style="font-size: 0.875rem; color: #a16207;">
+                            <div>John Doe: Frustrated but cooperative</div>
+                            <div>ABC Corp: Defensive but willing to negotiate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settlement Suggestions -->
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem; color: #1e293b;">💡 Settlement Options</h3>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer;" onclick="selectSettlement(1)">
+                            <h4 style="font-size: 0.875rem; color: #374151; margin-bottom: 0.25rem;">Option 1: Partial Compensation</h4>
+                            <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">$8,000 + positive reference</p>
+                        </div>
+                        <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer;" onclick="selectSettlement(2)">
+                            <h4 style="font-size: 0.875rem; color: #374151; margin-bottom: 0.25rem;">Option 2: Reinstatement</h4>
+                            <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Job restoration with conditions</p>
+                        </div>
+                        <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; cursor: pointer;" onclick="selectSettlement(3)">
+                            <h4 style="font-size: 0.875rem; color: #374151; margin-bottom: 0.25rem;">Option 3: Training & Severance</h4>
+                            <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">$5,000 + career training program</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Controls -->
+                <div style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h3 style="margin-bottom: 1rem; color: #1e293b;">Session Controls</h3>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <button onclick="generateSummary()" class="btn-primary" style="width: 100%;">Generate Summary</button>
+                        <button onclick="scheduleFollowUp()" class="btn-secondary" style="width: 100%;">Schedule Follow-up</button>
+                        <button onclick="finalizeAgreement()" class="btn-secondary" style="width: 100%;">Finalize Agreement</button>
+                    </div>
+
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        <div style="font-size: 0.875rem; color: #6b7280;">
+                            <div>Session Duration: 45 minutes</div>
+                            <div>Messages: 12</div>
+                            <div>Status: Active</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in and is mediator
+        if (!localStorage.getItem('isLoggedIn')) {
+            window.location.href = 'login.html';
+        }
+
+        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+        if (userData.userType !== 'mediator') {
+            alert('Access denied. This page is for mediators only.');
+            window.location.href = 'dashboard.html';
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.style.cssText = 'margin-bottom: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 4px solid #2563eb;';
+                messageDiv.innerHTML = `
+                    <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">Mediator (You)</div>
+                    <p style="color: #374151;">${message}</p>
+                    <small style="color: #6b7280;">${new Date().toLocaleTimeString()}</small>
+                `;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                input.value = '';
+            }
+        }
+
+        function selectSettlement(option) {
+            const options = {
+                1: 'Partial Compensation: $8,000 + positive reference',
+                2: 'Reinstatement: Job restoration with performance improvement plan',
+                3: 'Training & Severance: $5,000 + career training program'
+            };
+            
+            const message = `I'd like to propose the following settlement option: ${options[option]}. What are your thoughts on this approach?`;
+            document.getElementById('messageInput').value = message;
+        }
+
+        function suggestSettlement() {
+            alert('Settlement suggestion template added to message box. You can customize it before sending.');
+            document.getElementById('messageInput').value = 'Based on our discussion and the evidence presented, I suggest we explore a compromise that addresses both parties\' concerns...';
+        }
+
+        function scheduleBreak() {
+            alert('15-minute break scheduled. All parties will be notified.');
+        }
+
+        function generateSummary() {
+            alert('Session summary generated and saved. Key points and agreements have been documented.');
+        }
+
+        function scheduleFollowUp() {
+            const date = prompt('Enter follow-up date (YYYY-MM-DD):');
+            if (date) {
+                alert(`Follow-up session scheduled for ${date}. Calendar invites will be sent to all parties.`);
+            }
+        }
+
+        function finalizeAgreement() {
+            const confirmed = confirm('Are you ready to finalize the agreement? This will close the mediation session.');
+            if (confirmed) {
+                alert('Agreement finalized! Digital signatures will be collected and the case will be marked as resolved.');
+                window.location.href = 'dashboard.html';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            window.location.href = 'login.html';
+        }
+
+        // Allow Enter key to send messages
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

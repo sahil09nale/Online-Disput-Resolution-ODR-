@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Selector - ResolveNOW</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html"><h2>ResolveNOW</h2></a>
+            </div>
+            <div class="nav-menu">
+                <span style="color: var(--medium-gray); font-weight: 500;">Department Admin</span>
+                <a href="#" onclick="logout()" class="btn-secondary">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div style="margin-top: 80px; padding: 60px 24px; max-width: 1200px; margin-left: auto; margin-right: auto;">
+        <div style="text-align: center; margin-bottom: 60px;">
+            <h1 style="color: var(--deep-blue); font-size: 32px; font-weight: 700; margin-bottom: 16px;">Select Department</h1>
+            <p style="color: var(--medium-gray); font-size: 18px;">Choose the department you want to manage</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+            <!-- Consumer Department -->
+            <div onclick="selectDepartment('consumer')" style="background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--light-gray); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'">
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 24px; color: var(--teal);">🛒</div>
+                    <h3 style="color: var(--deep-blue); font-size: 24px; font-weight: 600; margin-bottom: 16px;">Consumer Department</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6; margin-bottom: 24px;">Handle consumer complaints, product issues, service disputes, and customer protection cases.</p>
+                    <div style="background: var(--off-white); padding: 16px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Pending Cases:</span>
+                            <span id="consumerPending" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Total Cases:</span>
+                            <span id="consumerTotal" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employment Department -->
+            <div onclick="selectDepartment('employment')" style="background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--light-gray); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'">
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 24px; color: var(--teal);">👔</div>
+                    <h3 style="color: var(--deep-blue); font-size: 24px; font-weight: 600; margin-bottom: 16px;">Employment Department</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6; margin-bottom: 24px;">Manage workplace disputes, wrongful termination, discrimination, and employment contract issues.</p>
+                    <div style="background: var(--off-white); padding: 16px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Pending Cases:</span>
+                            <span id="employmentPending" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Total Cases:</span>
+                            <span id="employmentTotal" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contract Department -->
+            <div onclick="selectDepartment('contract')" style="background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--light-gray); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'">
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 24px; color: var(--teal);">📄</div>
+                    <h3 style="color: var(--deep-blue); font-size: 24px; font-weight: 600; margin-bottom: 16px;">Contract Department</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6; margin-bottom: 24px;">Handle contract breaches, business agreements, vendor disputes, and commercial conflicts.</p>
+                    <div style="background: var(--off-white); padding: 16px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Pending Cases:</span>
+                            <span id="contractPending" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Total Cases:</span>
+                            <span id="contractTotal" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Property Department -->
+            <div onclick="selectDepartment('property')" style="background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--light-gray); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'">
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 24px; color: var(--teal);">🏠</div>
+                    <h3 style="color: var(--deep-blue); font-size: 24px; font-weight: 600; margin-bottom: 16px;">Property Department</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6; margin-bottom: 24px;">Manage property disputes, landlord-tenant issues, real estate conflicts, and boundary disputes.</p>
+                    <div style="background: var(--off-white); padding: 16px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Pending Cases:</span>
+                            <span id="propertyPending" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Total Cases:</span>
+                            <span id="propertyTotal" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Department -->
+            <div onclick="selectDepartment('business')" style="background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--light-gray); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'">
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 24px; color: var(--teal);">💼</div>
+                    <h3 style="color: var(--deep-blue); font-size: 24px; font-weight: 600; margin-bottom: 16px;">Business Department</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6; margin-bottom: 24px;">Handle business disputes, partnership conflicts, commercial disagreements, and corporate issues.</p>
+                    <div style="background: var(--off-white); padding: 16px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Pending Cases:</span>
+                            <span id="businessPending" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Total Cases:</span>
+                            <span id="businessTotal" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Family Department -->
+            <div onclick="selectDepartment('family')" style="background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--light-gray); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-md)'">
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 24px; color: var(--teal);">👨‍👩‍👧‍👦</div>
+                    <h3 style="color: var(--deep-blue); font-size: 24px; font-weight: 600; margin-bottom: 16px;">Family Department</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6; margin-bottom: 24px;">Manage family disputes, custody issues, divorce mediation, and domestic conflicts.</p>
+                    <div style="background: var(--off-white); padding: 16px; border-radius: var(--radius-sm);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Pending Cases:</span>
+                            <span id="familyPending" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--medium-gray); font-size: 14px;">Total Cases:</span>
+                            <span id="familyTotal" style="color: var(--charcoal); font-weight: 600;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadDepartmentStats() {
+            const allCases = JSON.parse(localStorage.getItem('departmentCases') || '[]');
+            
+            const departments = ['consumer', 'employment', 'contract', 'property', 'business', 'family'];
+            
+            departments.forEach(dept => {
+                const deptCases = allCases.filter(c => c.type === dept);
+                const pendingCases = deptCases.filter(c => c.status === 'Pending');
+                
+                document.getElementById(`${dept}Total`).textContent = deptCases.length;
+                document.getElementById(`${dept}Pending`).textContent = pendingCases.length;
+            });
+        }
+
+        function selectDepartment(department) {
+            window.location.href = `dept-${department}.html`;
+        }
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            window.location.href = 'login.html';
+        }
+
+        loadDepartmentStats();
+    </script>
+</body>
+</html>

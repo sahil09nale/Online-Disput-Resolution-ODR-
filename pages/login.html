@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - ResolveNOW</title>
+    <meta name="description" content="Sign in to ResolveNOW - AI-powered dispute resolution platform">
+    <link rel="stylesheet" href="../styles.css">
+    
+    <!-- Secure Supabase Authentication System -->
+    <script src="../js/config.js"></script>
+    <script type="module" src="../js/supabase-config.js"></script>
+    <script type="module" src="../js/supabase-auth.js"></script>
+    <script src="../js/auth-manager.js"></script>
+    <script src="../js/route-guard.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html"><h2>ResolveNOW</h2></a>
+            </div>
+            <div class="nav-menu">
+                <a href="how-it-works.html">How It Works</a>
+                <a href="about.html">About</a>
+                <a href="faq.html">FAQ</a>
+                <a href="contact.html">Contact</a>
+                <a href="register.html">Create Account</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="form-container">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <h2 style="color: var(--deep-blue); font-size: 28px; font-weight: 700; margin-bottom: 8px;">Welcome Back</h2>
+            <p style="color: var(--medium-gray); font-size: 16px;">Sign in to access your dispute resolution dashboard</p>
+        </div>
+        
+        <form id="loginForm">
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email address">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 32px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                    <input type="checkbox" id="remember" style="width: auto;"> 
+                    <span>Keep me signed in</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 24px;">Sign In</button>
+        </form>
+
+        <div style="text-align: center; margin-bottom: 32px;">
+            <a href="#" style="color: var(--teal); text-decoration: none; font-weight: 500;">Forgot your password?</a>
+        </div>
+
+        <div style="text-align: center; padding: 24px 0; border-top: 1px solid var(--light-gray);">
+            <p style="color: var(--medium-gray); margin-bottom: 16px;">Don't have an account?</p>
+            <a href="register.html" class="btn-secondary" style="width: 100%;">Create Account</a>
+        </div>
+        
+        <div style="background: rgba(44, 165, 141, 0.1); padding: 16px; border-radius: 8px; margin-top: 24px; border-left: 4px solid var(--teal);">
+            <h4 style="color: var(--teal); margin: 0 0 8px 0; font-size: 14px;">🔒 Secure Authentication</h4>
+            <p style="color: var(--charcoal); font-size: 13px; margin: 0; line-height: 1.4;">Sign in with your registered email and password. New users can create an account using the registration page.</p>
+        </div>
+    </div>
+
+    <script>
+        // Secure Login Handler
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Secure login system initialized');
+            
+            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const submitBtn = this.querySelector('button[type="submit"]');
+                
+                // Show loading state
+                submitBtn.textContent = 'Signing In...';
+                submitBtn.disabled = true;
+                
+                try {
+                    console.log('🔄 Starting login process...');
+                    console.log('🔧 AuthManager available:', typeof authManager, authManager);
+                    
+                    if (!authManager) {
+                        throw new Error('AuthManager not initialized');
+                    }
+                    
+                    // Use secure authentication manager
+                    const result = await authManager.login(email, password);
+                    
+                    console.log('🔍 Login result:', result);
+                    
+                    if (result && result.success) {
+                        console.log('✅ Login successful!');
+                        console.log('👤 User object:', result.user);
+                        console.log('📋 User profile:', result.user?.profile);
+                        console.log('🔧 User metadata:', result.user?.user_metadata);
+                        
+                        // Redirect based on user type from profile
+                        const userType = result.user?.profile?.user_type || result.user?.user_metadata?.user_type || 'individual';
+                        console.log('🎯 Detected user type:', userType);
+                        
+                        // Add a small delay to ensure localStorage is updated
+                        setTimeout(() => {
+                            if (userType === 'admin') {
+                                console.log('🔀 Redirecting to admin dashboard...');
+                                window.location.href = 'department.html';
+                            } else {
+                                console.log('🔀 Redirecting to user dashboard...');
+                                window.location.href = 'dashboard.html';
+                            }
+                        }, 100);
+                    } else {
+                        console.log('❌ Login failed:', result);
+                        alert(result?.error || 'Login failed. Please check your credentials.');
+                        submitBtn.textContent = 'Sign In';
+                        submitBtn.disabled = false;
+                    }
+                    
+                } catch (error) {
+                    console.error('Login error:', error);
+                    alert('Login failed: ' + error.message);
+                    submitBtn.textContent = 'Sign In';
+                    submitBtn.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

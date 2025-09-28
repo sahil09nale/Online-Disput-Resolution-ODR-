@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Settings - ResolveNOW</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="dashboard.html"><h2>ResolveNOW</h2></a>
+            </div>
+            <div class="nav-menu">
+                <a href="dashboard.html">Dashboard</a>
+                <span id="userWelcome" style="color: var(--medium-gray); font-weight: 500;"></span>
+                <a href="#" onclick="logout()" class="btn-secondary">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div style="margin-top: 80px; padding: 40px 24px; max-width: 800px; margin-left: auto; margin-right: auto;">
+        <div style="margin-bottom: 40px;">
+            <h1 style="color: var(--deep-blue); font-size: 32px; font-weight: 700; margin-bottom: 8px;">Profile Settings</h1>
+            <p style="color: var(--medium-gray);">Manage your account information and preferences</p>
+        </div>
+
+        <div style="display: grid; gap: 32px;">
+            <!-- Personal Information -->
+            <div style="background: white; padding: 32px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--light-gray);">
+                <h2 style="color: var(--deep-blue); font-size: 20px; font-weight: 600; margin-bottom: 24px;">Personal Information</h2>
+                
+                <form id="profileForm">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" name="fullName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="userType">Account Type</label>
+                            <select id="userType" name="userType" disabled>
+                                <option value="individual">Individual User</option>
+                                <option value="lawyer">Legal Professional</option>
+                                <option value="mediator">Certified Mediator</option>
+                                <option value="organization">Organization</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="licenseGroup" style="display: none;">
+                        <label for="licenseNumber">Professional License Number</label>
+                        <input type="text" id="licenseNumber" name="licenseNumber">
+                    </div>
+
+                    <button type="submit" class="btn-primary">Update Profile</button>
+                </form>
+            </div>
+
+            <!-- Security Settings -->
+            <div style="background: white; padding: 32px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--light-gray);">
+                <h2 style="color: var(--deep-blue); font-size: 20px; font-weight: 600; margin-bottom: 24px;">Security Settings</h2>
+                
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" name="currentPassword" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Change Password</button>
+                </form>
+            </div>
+
+            <!-- Notification Preferences -->
+            <div style="background: white; padding: 32px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--light-gray);">
+                <h2 style="color: var(--deep-blue); font-size: 20px; font-weight: 600; margin-bottom: 24px;">Notification Preferences</h2>
+                
+                <form id="notificationForm">
+                    <div style="display: grid; gap: 16px;">
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                            <input type="checkbox" id="emailNotifications" checked style="width: auto;">
+                            <div>
+                                <div style="font-weight: 500; color: var(--charcoal);">Email Notifications</div>
+                                <div style="font-size: 14px; color: var(--medium-gray);">Receive updates about your cases via email</div>
+                            </div>
+                        </label>
+
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                            <input type="checkbox" id="smsNotifications" style="width: auto;">
+                            <div>
+                                <div style="font-weight: 500; color: var(--charcoal);">SMS Notifications</div>
+                                <div style="font-size: 14px; color: var(--medium-gray);">Receive urgent updates via text message</div>
+                            </div>
+                        </label>
+
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                            <input type="checkbox" id="marketingEmails" style="width: auto;">
+                            <div>
+                                <div style="font-weight: 500; color: var(--charcoal);">Marketing Communications</div>
+                                <div style="font-size: 14px; color: var(--medium-gray);">Receive news and updates about ResolveNOW</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="margin-top: 24px;">Save Preferences</button>
+                </form>
+            </div>
+
+            <!-- Account Actions -->
+            <div style="background: white; padding: 32px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--light-gray);">
+                <h2 style="color: var(--deep-blue); font-size: 20px; font-weight: 600; margin-bottom: 24px;">Account Actions</h2>
+                
+                <div style="display: grid; gap: 16px;">
+                    <button onclick="downloadData()" class="btn-secondary" style="justify-self: start;">Download My Data</button>
+                    <button onclick="deactivateAccount()" style="background: var(--error-red); color: white; border: none; padding: 12px 24px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; justify-self: start;">Deactivate Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/script.js"></script>
+</body>
+</html>

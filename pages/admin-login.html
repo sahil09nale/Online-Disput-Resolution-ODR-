@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Access - ResolveNOW</title>
+    <meta name="description" content="Admin login and registration for ResolveNOW - AI-powered dispute resolution platform">
+    <link rel="stylesheet" href="../styles.css">
+    
+    <!-- Secure Supabase Authentication System -->
+    <script src="../js/config.js"></script>
+    <script type="module" src="../js/supabase-config.js"></script>
+    <script type="module" src="../js/supabase-auth.js"></script>
+    <script src="../js/auth-manager.js"></script>
+    <script src="../js/route-guard.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html"><h2>ResolveNOW</h2></a>
+            </div>
+            <div class="nav-menu">
+                <a href="how-it-works.html">How It Works</a>
+                <a href="about.html">About</a>
+                <a href="faq.html">FAQ</a>
+                <a href="contact.html">Contact</a>
+                <a href="login.html">User Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="form-container" style="max-width: 520px;">
+        <!-- Login Form (Default) -->
+        <div id="loginSection">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <h2 style="color: var(--deep-blue); font-size: 28px; font-weight: 700; margin-bottom: 8px;">Admin Access</h2>
+                <p style="color: var(--medium-gray); font-size: 16px;">Sign in to access the administrative dashboard</p>
+            </div>
+            
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" name="email" required placeholder="Enter your admin email address">
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" name="password" required placeholder="Enter your password">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                        <input type="checkbox" id="remember" style="width: auto;"> 
+                        <span>Keep me signed in</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 24px;">Sign In as Admin</button>
+            </form>
+
+            <div style="text-align: center; margin-bottom: 32px;">
+                <a href="#" style="color: var(--teal); text-decoration: none; font-weight: 500;">Forgot your password?</a>
+            </div>
+
+            <div style="text-align: center; padding: 24px 0; border-top: 1px solid var(--light-gray);">
+                <p style="color: var(--medium-gray); margin-bottom: 16px;">Need to register as admin?</p>
+                <button onclick="showRegisterForm()" class="btn-secondary" style="width: 100%; margin-bottom: 16px;">Register as Admin</button>
+                <div style="margin-top: 16px;">
+                    <p style="color: var(--medium-gray); margin-bottom: 8px; font-size: 14px;">Regular user?</p>
+                    <a href="login.html" style="color: var(--teal); text-decoration: none; font-weight: 500;">Go to User Login</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Form (Hidden by default) -->
+        <div id="registerSection" style="display: none;">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <h2 style="color: var(--deep-blue); font-size: 28px; font-weight: 700; margin-bottom: 8px;">Register as Admin</h2>
+                <p style="color: var(--medium-gray); font-size: 16px;">Create an administrative account for ResolveNOW</p>
+            </div>
+            
+            <form id="adminRegisterForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email address">
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="Enter your phone number">
+                </div>
+
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <select id="department" name="department" required>
+                        <option value="">Select your department</option>
+                        <option value="consumer">Consumer Department</option>
+                        <option value="employment">Employment Department</option>
+                        <option value="contract">Contract Department</option>
+                        <option value="property">Property Department</option>
+                        <option value="business">Business Department</option>
+                        <option value="family">Family Department</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="authCode">Admin Authorization Code</label>
+                    <input type="text" id="authCode" name="authCode" required placeholder="Enter your admin authorization code">
+                    <small style="color: var(--medium-gray); font-size: 13px; margin-top: 4px; display: block;">Required for admin registration</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Create a secure password">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Confirm your password">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label style="display: flex; align-items: flex-start; gap: 12px; font-weight: 500; line-height: 1.5;">
+                        <input type="checkbox" id="terms" required style="width: auto; margin-top: 2px;"> 
+                        <span>I agree to the <a href="#" style="color: var(--teal); text-decoration: none;">Terms of Service</a> and <a href="#" style="color: var(--teal); text-decoration: none;">Privacy Policy</a></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 24px;">Create Admin Account</button>
+            </form>
+
+            <div style="text-align: center; padding: 24px 0; border-top: 1px solid var(--light-gray);">
+                <p style="color: var(--medium-gray); margin-bottom: 16px;">Already have an admin account?</p>
+                <button onclick="showLoginForm()" class="btn-secondary" style="width: 100%;">Sign In as Admin</button>
+            </div>
+        </div>
+        
+        <div style="background: rgba(44, 165, 141, 0.1); padding: 16px; border-radius: 8px; margin-top: 24px; border-left: 4px solid var(--teal);">
+            <h4 style="color: var(--teal); margin: 0 0 8px 0; font-size: 14px;">🔒 Secure Admin Access</h4>
+            <p style="color: var(--charcoal); font-size: 13px; margin: 0; line-height: 1.4;">Admin accounts require special authorization codes and have elevated privileges for managing dispute resolution cases.</p>
+        </div>
+    </div>
+
+    <!-- Supabase Authentication Service -->
+    <script type="module" src="../js/supabase-auth.js"></script>
+    
+    <script>
+        // Toggle between login and register forms
+        function showRegisterForm() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('registerSection').style.display = 'block';
+        }
+        
+        function showLoginForm() {
+            document.getElementById('registerSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+        }
+
+        // Secure Admin Login Handler
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Secure admin authentication system initialized');
+            
+            // Admin Login Form
+            document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                const submitBtn = this.querySelector('button[type="submit"]');
+                
+                // Show loading state
+                submitBtn.textContent = 'Signing In...';
+                submitBtn.disabled = true;
+                
+                try {
+                    // Use secure authentication manager
+                    const result = await authManager.login(email, password);
+                    
+                    if (result.success) {
+                        console.log('Admin login successful');
+                        
+                        // Verify admin role
+                        if (result.user.role === 'admin') {
+                            window.location.href = 'department.html';
+                        } else {
+                            alert('Access denied. This account does not have admin privileges.');
+                            submitBtn.textContent = 'Sign In as Admin';
+                            submitBtn.disabled = false;
+                        }
+                    } else {
+                        alert(result.error || 'Login failed. Please check your credentials.');
+                        submitBtn.textContent = 'Sign In as Admin';
+                        submitBtn.disabled = false;
+                    }
+                    
+                } catch (error) {
+                    console.error('Admin login error:', error);
+                    alert('Login failed: ' + error.message);
+                    submitBtn.textContent = 'Sign In as Admin';
+                    submitBtn.disabled = false;
+                }
+            });
+
+            // Admin Registration Form
+            document.getElementById('adminRegisterForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const submitBtn = this.querySelector('button[type="submit"]');
+                
+                // Client-side validation
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match. Please try again.');
+                    return;
+                }
+
+                if (password.length < 8) {
+                    alert('Password must be at least 8 characters long.');
+                    return;
+                }
+                
+                const userData = {
+                    fullName: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    password: password,
+                    phone: document.getElementById('phone').value,
+                    userType: 'admin',
+                    department: document.getElementById('department').value,
+                    authCode: document.getElementById('authCode').value
+                };
+                
+                // Show loading state
+                submitBtn.textContent = 'Creating Admin Account...';
+                submitBtn.disabled = true;
+                
+                try {
+                    // Use secure authentication manager
+                    const result = await authManager.registerAdmin(userData);
+                    
+                    if (result.success) {
+                        console.log('Admin registration successful');
+                        alert(`🎉 Admin Account Created Successfully!\n\nWelcome to ResolveNOW Admin, ${userData.fullName}!\n\nYour admin account has been created. You will now be redirected to the admin dashboard.`);
+                        
+                        // Redirect to admin dashboard
+                        window.location.href = 'department.html';
+                    } else {
+                        alert(result.error || 'Admin registration failed. Please check your authorization code and try again.');
+                        submitBtn.textContent = 'Create Admin Account';
+                        submitBtn.disabled = false;
+                    }
+                    
+                } catch (error) {
+                    console.error('Admin registration error:', error);
+                    alert('Registration failed: ' + error.message);
+                    submitBtn.textContent = 'Create Admin Account';
+                    submitBtn.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
