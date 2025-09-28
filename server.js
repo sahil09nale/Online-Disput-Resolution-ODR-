@@ -98,23 +98,42 @@ app.use('/api/upload', authenticateToken, uploadRoutes);
 
 // Serve frontend for all other routes (SPA support)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
+// Add detailed error logging
+app.use((err, req, res, next) => {
+  console.error('Server Error:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    body: req.body,
+    timestamp: new Date().toISOString()
+  });
+  
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 ResolveNOW Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🗄️  Supabase: ${process.env.SUPABASE_URL ? 'Connected' : 'Not configured'}`);
+  console.log(`ResolveNOW server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`Supabase URL: ${process.env.SUPABASE_URL ? 'Configured' : 'NOT CONFIGURED'}`);
+  console.log(`Supabase Key: ${process.env.SUPABASE_ANON_KEY ? 'Configured' : 'NOT CONFIGURED'}`);
+  console.log(`Health check: http://localhost:${PORT}/api/health`);
+  console.log(`Supabase: ${process.env.SUPABASE_URL ? 'Connected' : 'Not configured'}`);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
   process.exit(0);
 });
 

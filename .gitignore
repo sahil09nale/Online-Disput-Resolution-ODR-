@@ -41,3 +41,7 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# Documentation files (generated during development)
+*.md
+!README.md

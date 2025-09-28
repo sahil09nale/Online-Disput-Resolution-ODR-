@@ -62,39 +62,7 @@ Your ResolveNOW backend has been successfully implemented with **maximum securit
 - `DELETE /api/users/account` - Account deletion (501 Not Implemented)
 - `POST /api/upload/case/:caseId` - File uploads (501 Not Implemented)
 
-## 🛠️ **Setup Instructions**
 
-### **1. Environment Configuration**
-```bash
-# Copy the example environment file
-cp .env.example .env
-
-# Edit .env with your Supabase credentials
-SUPABASE_URL=your-supabase-project-url
-SUPABASE_ANON_KEY=your-supabase-anon-key
-```
-
-### **2. Database Setup**
-1. Run `supabase-schema.sql` in your Supabase SQL editor
-2. Set up Row Level Security policies for data protection
-3. Configure authentication settings in Supabase dashboard
-
-### **3. Install and Run**
-```bash
-# Install dependencies
-npm install
-
-# Check database connection
-npm run setup
-
-# Start development server
-npm run dev
-```
-
-### **4. Access the Application**
-- **Frontend**: http://localhost:3000
-- **API Health**: http://localhost:3000/api/health
-- **Registration**: Create accounts via the frontend
 
 ## 🔒 **Security Features**
 

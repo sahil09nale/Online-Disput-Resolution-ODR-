@@ -10,9 +10,6 @@ const validateCaseSubmission = [
   body('disputeType').isIn(['consumer', 'employment', 'contract', 'property', 'family', 'other']),
   body('description').trim().isLength({ min: 20 }).withMessage('Description must be at least 20 characters'),
   body('disputeAmount').optional().isNumeric().withMessage('Dispute amount must be a number'),
-  body('respondentName').trim().isLength({ min: 2 }).withMessage('Respondent name is required'),
-  body('respondentEmail').optional().isEmail(),
-  body('respondentPhone').optional().trim(),
   body('preferredResolution').optional().trim()
 ];
 
@@ -42,7 +39,7 @@ router.get('/', async (req, res) => {
       query = query.eq('status', status);
     }
     if (disputeType) {
-      query = query.eq('dispute_type', disputeType);
+      query = query.eq('case_type', disputeType); // Match schema column name
     }
 
     const { data: cases, error, count } = await query;
@@ -120,12 +117,44 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Test endpoint for debugging
+router.post('/test-submit', async (req, res) => {
+  try {
+    console.log('🧪 Test submission:', {
+      user: req.user,
+      body: req.body,
+      headers: req.headers,
+      timestamp: new Date().toISOString()
+    });
+
+    res.json({
+      success: true,
+      message: 'Test endpoint working',
+      user: req.user,
+      body: req.body
+    });
+  } catch (error) {
+    console.error('❌ Test endpoint error:', error);
+    res.status(500).json({
+      error: 'Test failed',
+      details: error.message
+    });
+  }
+});
+
 // Submit new case
 router.post('/submit', validateCaseSubmission, async (req, res) => {
   try {
+    console.log('🔄 Case submission started:', {
+      user: req.user?.id,
+      body: req.body,
+      timestamp: new Date().toISOString()
+    });
+
     // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('❌ Validation failed:', errors.array());
       return res.status(400).json({
         error: 'Validation failed',
         details: errors.array()
@@ -163,24 +192,28 @@ router.post('/submit', validateCaseSubmission, async (req, res) => {
         user_id: req.user.id,
         user_email: req.user.email,
         case_title: caseTitle,
-        dispute_type: disputeType,
+        case_type: disputeType, // Match schema column name
         description,
-        dispute_amount: disputeAmount ? parseFloat(disputeAmount) : null,
-        respondent_name: respondentName,
-        respondent_email: respondentEmail,
-        respondent_phone: respondentPhone,
+        amount_involved: disputeAmount ? parseFloat(disputeAmount) : null, // Match schema column name
         preferred_resolution: preferredResolution,
         urgency_level: urgencyLevel,
-        assigned_department: assignedDepartment,
-        status: 'pending'
+        status: 'Pending' // Match schema enum values
       })
       .select()
       .single();
 
     if (error) {
+      console.error('❌ Database insertion failed:', {
+        error: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        timestamp: new Date().toISOString()
+      });
       return res.status(400).json({
         error: 'Failed to create case',
-        code: 'CREATION_ERROR'
+        code: 'CREATION_ERROR',
+        details: error.message
       });
     }
 
@@ -195,10 +228,17 @@ router.post('/submit', validateCaseSubmission, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Case submission error:', error);
+    console.error('❌ Case submission error:', {
+      message: error.message,
+      stack: error.stack,
+      user: req.user?.id,
+      body: req.body,
+      timestamp: new Date().toISOString()
+    });
     res.status(500).json({
       error: 'Failed to submit case',
-      code: 'SUBMISSION_ERROR'
+      code: 'SUBMISSION_ERROR',
+      details: error.message
     });
   }
 });
@@ -225,7 +265,7 @@ router.patch('/:id', async (req, res) => {
     }
 
     // Add updated timestamp
-    updates.updated_at = new Date().toISOString();
+    updates.last_updated = new Date().toISOString();
 
     const { data: updatedCase, error } = await req.supabase
       .from('cases')
@@ -260,7 +300,7 @@ router.patch('/:id', async (req, res) => {
 // Get case statistics for dashboard
 router.get('/stats/dashboard', async (req, res) => {
   try {
-    // Get case counts by status
+    // Get case statistics
     const { data: statusStats, error: statusError } = await req.supabase
       .from('cases')
       .select('status')
@@ -273,13 +313,13 @@ router.get('/stats/dashboard', async (req, res) => {
       });
     }
 
-    // Calculate statistics
+    // Calculate statistics (match schema enum values)
     const stats = {
       total: statusStats.length,
-      pending: statusStats.filter(c => c.status === 'pending').length,
-      in_review: statusStats.filter(c => c.status === 'in_review').length,
-      resolved: statusStats.filter(c => c.status === 'resolved').length,
-      rejected: statusStats.filter(c => c.status === 'rejected').length
+      pending: statusStats.filter(c => c.status === 'Pending').length,
+      in_review: statusStats.filter(c => c.status === 'In Review').length,
+      resolved: statusStats.filter(c => c.status === 'Resolved').length,
+      closed: statusStats.filter(c => c.status === 'Closed').length
     };
 
     // Get recent cases
@@ -332,19 +372,19 @@ router.delete('/:id', async (req, res) => {
       });
     }
 
-    if (case_.status !== 'pending') {
+    if (case_.status !== 'Pending') {
       return res.status(400).json({
         error: 'Only pending cases can be cancelled',
         code: 'CANNOT_CANCEL'
       });
     }
 
-    // Update status to cancelled instead of deleting
+    // Update status to closed instead of deleting
     const { error: updateError } = await req.supabase
       .from('cases')
       .update({ 
-        status: 'cancelled',
-        updated_at: new Date().toISOString()
+        status: 'Closed',
+        last_updated: new Date().toISOString()
       })
       .eq('id', id)
       .eq('user_id', req.user.id);
