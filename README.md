@@ -1,8 +1,82 @@
-# ResolveNOW - AI-Powered Online Dispute Resolution Platform (Static Version)
+# ResolveNOW - AI-Powered Online Dispute Resolution Platform
 
 ResolveNOW is a comprehensive, AI-powered online dispute resolution platform that democratizes access to justice through intelligent mediation, automated case analysis, and fair resolution outcomes for everyone.
 
-**Note: This is currently a static version with all backend logic and scripts removed. The pages showcase the UI/UX design and can serve as a foundation for future development.**
+## 🚀 Backend Architecture
+
+This application now features a complete **Node.js + Express.js backend** with **Supabase** integration, providing:
+
+- **Secure Authentication** with JWT tokens and HTTP-only cookies
+- **Role-based Access Control** (Individual, Lawyer, Mediator, Organization, Admin)
+- **Case Management System** with real-time updates
+- **File Upload & Storage** with Supabase Storage
+- **Email Notifications** for case status updates
+- **Admin Dashboard** with department-based case management
+- **RESTful API** with comprehensive error handling
+
+## 🛠️ Quick Start
+
+### Prerequisites
+- Node.js 16+ 
+- Supabase account and project
+- SMTP email service (optional, for notifications)
+
+### Installation
+
+1. **Clone and Install Dependencies**
+```bash
+npm install
+```
+
+2. **Configure Environment Variables**
+```bash
+cp .env.example .env
+# Edit .env with your Supabase credentials and other settings
+```
+
+3. **Set up Supabase Database**
+- Run the `supabase-schema.sql` file in your Supabase SQL editor
+- Create a storage bucket named 'case-files'
+
+4. **Initialize Database**
+```bash
+npm run setup
+```
+
+5. **Start Development Server**
+```bash
+npm run dev
+```
+
+The server will start on `http://localhost:3000`
+
+### Default Admin Credentials
+- **Email:** admin@resolvenow.com
+- **Password:** admin123
+
+## 📡 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user
+
+### Cases
+- `GET /api/cases` - Get user's cases
+- `POST /api/cases/submit` - Submit new case
+- `GET /api/cases/:id` - Get specific case
+- `PATCH /api/cases/:id` - Update case
+
+### Admin
+- `GET /api/admin/cases` - Get department cases
+- `PATCH /api/admin/cases/:id/status` - Update case status
+- `GET /api/admin/users` - Manage users
+
+### File Upload
+- `POST /api/upload/case/:caseId` - Upload case files
+- `GET /api/upload/case/:caseId` - Get case files
+- `DELETE /api/upload/file/:fileId` - Delete file
 
 ## 🛡️ **SECURITY TRANSFORMATION COMPLETE**
 
