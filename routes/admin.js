@@ -216,6 +216,11 @@ router.patch('/cases/:id/status', [
       status
     ).catch(console.error);
 
+    // Broadcast case status change via WebSocket
+    if (req.broadcast) {
+      req.broadcast.caseStatusChange(updatedCase, currentCase.status, status);
+    }
+
     res.json({
       success: true,
       message: 'Case status updated successfully',

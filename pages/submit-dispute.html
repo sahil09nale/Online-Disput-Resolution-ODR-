@@ -167,84 +167,7 @@
             }
         }
 
-        // File upload handling - API-driven, no localStorage
-        let currentTempCaseId = null;
-        document.getElementById('evidence').addEventListener('change', async function(e) {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-            
-            const uploadContainer = document.getElementById('uploadContainer');
-            const uploadedFilesDiv = document.getElementById('uploadedFiles');
-            
-            uploadContainer.style.display = 'block';
-            
-            // Display selected files (will be uploaded when case is submitted)
-            uploadedFilesDiv.innerHTML = '';
-            files.forEach(file => {
-                const fileDiv = document.createElement('div');
-                fileDiv.style.cssText = 'padding: 8px; border: 1px solid #ddd; margin: 4px 0; border-radius: 4px;';
-                fileDiv.innerHTML = `
-                    <span style="font-weight: 500;">${file.name}</span>
-                    <span style="color: #666; margin-left: 8px;">(${(file.size / 1024).toFixed(1)} KB)</span>
-                    <span style="color: #28a745; margin-left: 8px;">Ready to upload</span>
-                `;
-                uploadedFilesDiv.appendChild(fileDiv);
-            });
-        });
-
-        document.getElementById('disputeForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(this);
-            const disputeData = Object.fromEntries(formData.entries());
-            
-            // Generate case data
-            const caseData = {
-                id: generateCaseId(),
-                title: disputeData.disputeTitle,
-                type: disputeData.disputeType,
-                status: 'Pending',
-                submittedAt: new Date().toISOString(),
-                ...disputeData
-            };
-
-            // Submit case to server via API
-            try {
-                if (!window.authManager) {
-                    throw new Error('Authentication manager not available');
-                }
-                
-                const response = await window.authManager.apiRequest('/api/cases/submit', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        caseTitle: disputeData.disputeTitle,
-                        disputeType: disputeData.disputeType,
-                        description: disputeData.description,
-                        disputeAmount: parseFloat(disputeData.disputeAmount) || null,
-                        preferredResolution: disputeData.preferredResolution,
-                        urgencyLevel: disputeData.urgencyLevel || 'medium'
-                    })
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to submit case');
-                }
-                
-                const result = await response.json();
-                caseData.id = result.case.id; // Use server-generated ID
-                
-            } catch (error) {
-                console.error('Failed to submit case:', error);
-                alert('Failed to submit case: ' + error.message);
-                return;
-            }
-
-            // Case submitted successfully - no localStorage cleanup needed
-
-            // Show AI analysis simulation
-            showAIAnalysis(caseData);
-        });
+        // All form handling is now managed by submit-dispute.js
 
         function showAIAnalysis(caseData) {
             const analysisModal = document.createElement('div');
@@ -290,7 +213,7 @@
         function getDepartmentByDisputeType(disputeType) {
             const mapping = {
                 'consumer': 'consumer',
-                'employment': 'employment', 
+                'employment': 'employment',
                 'contract': 'contract',
                 'property': 'property',
                 'business': 'business',

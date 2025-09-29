@@ -134,6 +134,11 @@ class AuthManager {
         return this.hasRole('admin');
     }
 
+    // Get JWT token for WebSocket authentication
+    getToken() {
+        return localStorage.getItem('authToken');
+    }
+
     // Redirect to login if not authenticated
     async requireAuth(redirectUrl = null) {
         const authResult = await this.checkAuth();

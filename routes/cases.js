@@ -221,6 +221,11 @@ router.post('/submit', validateCaseSubmission, async (req, res) => {
     sendCaseStatusEmail(req.user.email, req.user.full_name, newCase, 'submitted')
       .catch(console.error);
 
+    // Broadcast new case to admins via WebSocket
+    if (req.broadcast) {
+      req.broadcast.newCase(newCase);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Case submitted successfully',
@@ -280,6 +285,11 @@ router.patch('/:id', async (req, res) => {
         error: 'Case not found or update failed',
         code: 'UPDATE_ERROR'
       });
+    }
+
+    // Broadcast case update via WebSocket
+    if (req.broadcast) {
+      req.broadcast.caseUpdate(updatedCase);
     }
 
     res.json({

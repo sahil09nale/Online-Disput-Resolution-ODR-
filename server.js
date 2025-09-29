@@ -6,6 +6,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const http = require('http');
 require('dotenv').config();
 
 // Import routes
@@ -15,13 +16,21 @@ const caseRoutes = require('./routes/cases');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 
+// Import WebSocket and middleware
+const WebSocketManager = require('./routes/websocket');
+const websocketIntegration = require('./middleware/websocket-integration');
+
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
 const { authenticateToken } = require('./middleware/auth');
 
-// Initialize Express app
+// Initialize Express app and HTTP server
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// Initialize WebSocket Manager
+const wsManager = new WebSocketManager(server);
 
 // Security middleware
 app.use(helmet({
@@ -72,6 +81,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
+// WebSocket integration middleware (adds broadcast methods to req object)
+app.use(websocketIntegration(wsManager));
+
 // Serve static files (HTML pages only)
 app.use(express.static(path.join(__dirname, '.')));
 
@@ -121,15 +133,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server with WebSocket support
+server.listen(PORT, () => {
   console.log(`ResolveNOW server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  console.log(`WebSocket URL: ws://localhost:${PORT}/ws/dashboard`);
   console.log(`Supabase URL: ${process.env.SUPABASE_URL ? 'Configured' : 'NOT CONFIGURED'}`);
   console.log(`Supabase Key: ${process.env.SUPABASE_ANON_KEY ? 'Configured' : 'NOT CONFIGURED'}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
-  console.log(`Supabase: ${process.env.SUPABASE_URL ? 'Connected' : 'Not configured'}`);
+  console.log(`WebSocket Stats: ${JSON.stringify(wsManager.getStats())}`);
 });
 
 // Graceful shutdown

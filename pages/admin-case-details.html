@@ -27,16 +27,21 @@
 
     <!-- Secure Supabase Evidence Manager -->
     <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
     <script type="module" src="../js/supabase-config.js"></script>
     <script type="module" src="../js/supabase-storage.js"></script>
 
     <script>
+        // Global variables
+        let currentCaseId = null;
+        let currentCaseData = null;
+
         // API-driven admin case details - NO localStorage usage
         async function loadCaseDetails() {
             const urlParams = new URLSearchParams(window.location.search);
-            const caseId = urlParams.get('id');
+            currentCaseId = urlParams.get('id');
 
-            if (!caseId) {
+            if (!currentCaseId) {
                 alert('Invalid case ID');
                 window.location.href = 'department.html';
                 return;
@@ -56,23 +61,26 @@
                 }
 
                 // Load case from API
-                const response = await window.authManager.apiRequest(`/admin/cases/${caseId}`);
+                const response = await window.authManager.apiRequest(`/admin/cases/${currentCaseId}`);
                 
                 if (!response.ok) {
                     throw new Error('Failed to load case details');
                 }
                 
                 const data = await response.json();
-                const caseData = data.case;
+                currentCaseData = data.case;
 
-                if (!caseData) {
+                if (!currentCaseData) {
                     alert('Case not found');
                     window.location.href = 'department.html';
                     return;
                 }
 
+                // Load evidence files from API
+                const evidenceFiles = await loadEvidenceFiles(currentCaseId);
+
                 // Display case details
-                displayCaseDetails(caseData);
+                displayCaseDetails(currentCaseData, evidenceFiles);
 
             } catch (error) {
                 console.error('Failed to load case details:', error);
@@ -81,18 +89,18 @@
             }
         }
 
-        function displayCaseDetails(caseData) {
+        function displayCaseDetails(caseData, evidenceFiles = []) {
             document.getElementById('caseDetails').innerHTML = `
                 <div style="padding: 32px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; border-bottom: 1px solid #e5e7eb; padding-bottom: 24px;">
                         <div>
-                            <h1 style="color: var(--deep-blue); font-size: 28px; margin-bottom: 8px;">${caseData.title}</h1>
-                            <p style="color: var(--medium-gray);">Case ID: ${caseData.id}</p>
+                            <h1 style="color: var(--deep-blue); font-size: 28px; margin-bottom: 8px;">${caseData.case_title || caseData.title || 'Untitled Case'}</h1>
+                            <p style="color: var(--medium-gray);">Case ID: #${caseData.id.slice(0, 8)}</p>
                         </div>
                         <div style="text-align: right;">
-                            <span class="status-badge status-${caseData.status.toLowerCase()}" style="font-size: 16px; padding: 8px 16px;">${caseData.status}</span>
+                            <span class="status-badge status-${caseData.status.toLowerCase().replace(' ', '-')}" style="font-size: 16px; padding: 8px 16px;">${caseData.status}</span>
                             <div style="margin-top: 8px; color: var(--medium-gray); font-size: 14px;">
-                                Filed: ${new Date(caseData.submittedAt).toLocaleDateString()}
+                                Filed: ${new Date(caseData.created_at || caseData.submittedAt).toLocaleDateString()}
                             </div>
                         </div>
                     </div>
@@ -101,12 +109,12 @@
                         <div>
                             <h3 style="color: var(--deep-blue); margin-bottom: 16px;">Case Information</h3>
                             <div style="background: #f9fafb; padding: 20px; border-radius: 8px;">
-                                <div style="margin-bottom: 12px;"><strong>Complainant:</strong> ${caseData.submittedBy}</div>
-                                <div style="margin-bottom: 12px;"><strong>Email:</strong> ${caseData.submitterEmail}</div>
-                                <div style="margin-bottom: 12px;"><strong>Other Party:</strong> ${caseData.otherParty}</div>
-                                <div style="margin-bottom: 12px;"><strong>Dispute Type:</strong> ${caseData.type}</div>
-                                <div style="margin-bottom: 12px;"><strong>Amount:</strong> $${caseData.disputeAmount || '0'}</div>
-                                <div><strong>Incident Date:</strong> ${caseData.incidentDate || 'Not specified'}</div>
+                                <div style="margin-bottom: 12px;"><strong>Complainant:</strong> ${caseData.user?.full_name || caseData.user_email || 'Unknown'}</div>
+                                <div style="margin-bottom: 12px;"><strong>Email:</strong> ${caseData.user_email || 'Not provided'}</div>
+                                <div style="margin-bottom: 12px;"><strong>Dispute Type:</strong> ${formatDisputeType(caseData.case_type || caseData.type)}</div>
+                                <div style="margin-bottom: 12px;"><strong>Amount:</strong> ${caseData.dispute_amount ? '$' + caseData.dispute_amount : 'Not specified'}</div>
+                                <div style="margin-bottom: 12px;"><strong>Priority:</strong> ${formatPriority(caseData.urgency_level)}</div>
+                                <div><strong>Department:</strong> ${caseData.department || 'Not assigned'}</div>
                             </div>
                         </div>
 
@@ -116,10 +124,10 @@
                                 ${evidenceFiles.length > 0 ? evidenceFiles.map(file => `
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
                                         <div>
-                                            <div style="font-weight: 500;">${file.fileName}</div>
-                                            <div style="font-size: 12px; color: var(--medium-gray);">Uploaded: ${new Date(file.uploadedAt).toLocaleDateString()}</div>
+                                            <div style="font-weight: 500;">${file.original_filename || file.fileName}</div>
+                                            <div style="font-size: 12px; color: var(--medium-gray);">Uploaded: ${new Date(file.created_at || file.uploadedAt).toLocaleDateString()}</div>
                                         </div>
-                                        <button onclick="viewEvidence('${file.fileName}', '${caseId}', '${caseData.submitterUid}')" 
+                                        <button onclick="viewEvidence('${file.id}', '${file.original_filename}')" 
                                                 style="background: var(--teal); color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
                                             View
                                         </button>
@@ -136,20 +144,34 @@
                         </div>
                     </div>
 
-                    <div style="margin-bottom: 32px;">
-                        <h3 style="color: var(--deep-blue); margin-bottom: 16px;">Desired Outcome</h3>
-                        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; line-height: 1.6;">
-                            ${caseData.desiredOutcome || 'No desired outcome specified'}
+                    ${caseData.preferred_resolution ? `
+                        <div style="margin-bottom: 32px;">
+                            <h3 style="color: var(--deep-blue); margin-bottom: 16px;">Preferred Resolution</h3>
+                            <div style="background: #f9fafb; padding: 20px; border-radius: 8px; line-height: 1.6;">
+                                ${caseData.preferred_resolution}
+                            </div>
                         </div>
-                    </div>
+                    ` : ''}
 
-                    ${caseData.resolution ? `
+                    ${caseData.resolution_notes ? `
                         <div style="margin-bottom: 32px;">
                             <h3 style="color: var(--success); margin-bottom: 16px;">Resolution</h3>
                             <div style="background: rgba(16, 185, 129, 0.1); padding: 20px; border-radius: 8px; border-left: 4px solid var(--success);">
-                                ${caseData.resolution}
+                                ${caseData.resolution_notes}
                                 <div style="margin-top: 12px; font-size: 14px; color: var(--medium-gray);">
-                                    Resolved on: ${new Date(caseData.resolvedAt).toLocaleDateString()}
+                                    Resolved on: ${new Date(caseData.resolved_at).toLocaleDateString()}
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${caseData.assigned_mediator ? `
+                        <div style="margin-bottom: 32px;">
+                            <h3 style="color: var(--deep-blue); margin-bottom: 16px;">Assigned Mediator</h3>
+                            <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid var(--teal);">
+                                <strong>${caseData.assigned_mediator}</strong>
+                                <div style="margin-top: 8px; font-size: 14px; color: var(--medium-gray);">
+                                    Assigned on: ${new Date(caseData.updated_at).toLocaleDateString()}
                                 </div>
                             </div>
                         </div>
@@ -157,44 +179,64 @@
 
                     <div style="display: flex; gap: 16px; justify-content: center; padding-top: 24px; border-top: 1px solid #e5e7eb;">
                         ${caseData.status !== 'Resolved' ? `
-                            <button onclick="resolveCase('${caseId}', '${department}')" 
+                            <button onclick="resolveCase()" 
                                     class="btn-primary" style="padding: 12px 24px;">
                                 Resolve Case
                             </button>
-                            <button onclick="assignMediator('${caseId}', '${department}')" 
+                            <button onclick="assignMediator()" 
                                     class="btn-secondary" style="padding: 12px 24px;">
                                 Assign Mediator
+                            </button>
+                            <button onclick="updateCaseStatus('In Review')" 
+                                    class="btn-secondary" style="padding: 12px 24px;">
+                                Mark In Review
                             </button>
                         ` : `
                             <span style="color: var(--success); font-weight: 600; font-size: 18px;">✅ Case Resolved</span>
                         `}
+                        <button onclick="goBack()" class="btn-secondary" style="padding: 12px 24px;">
+                            Back to Dashboard
+                        </button>
                     </div>
                 </div>
             `;
         }
 
-        async function loadEvidenceFiles(caseId, submitterUid) {
+        async function loadEvidenceFiles(caseId) {
             try {
-                // Get files from Firebase Storage
-                const files = await window.FirebaseStorageManager.getFiles(caseId);
-                return files || [];
+                // Load files from API
+                const response = await window.authManager.apiRequest(`/upload/case/${caseId}/files`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.files || [];
+                } else {
+                    console.warn('Failed to load evidence files');
+                    return [];
+                }
             } catch (error) {
                 console.error('Error loading evidence files:', error);
                 return [];
             }
         }
 
-        async function viewEvidence(fileName, caseId, submitterUid) {
+        async function viewEvidence(fileId, fileName) {
             try {
-                // Get file from Firebase Storage
-                const files = await window.FirebaseStorageManager.getFiles(caseId);
-                const file = files.find(f => f.fileName === fileName || f.originalName === fileName);
+                // Download file via API
+                const response = await window.authManager.apiRequest(`/upload/download/${fileId}`);
                 
-                if (file && file.downloadURL) {
-                    // Open Firebase Storage file in new tab
-                    window.open(file.downloadURL, '_blank');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName || 'evidence-file';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
                 } else {
-                    alert('File not found or no download URL available');
+                    alert('File not found or access denied');
                 }
             } catch (error) {
                 console.error('Error viewing evidence:', error);
@@ -202,13 +244,13 @@
             }
         }
 
-        async function resolveCase(caseId) {
+        async function resolveCase() {
             const resolution = prompt('Enter resolution details:');
             if (!resolution) return;
 
             try {
-                const response = await window.authManager.apiRequest(`/admin/cases/${caseId}/resolve`, {
-                    method: 'POST',
+                const response = await window.authManager.apiRequest(`/admin/cases/${currentCaseId}/status`, {
+                    method: 'PATCH',
                     body: JSON.stringify({
                         status: 'Resolved',
                         resolution_notes: resolution
@@ -228,15 +270,15 @@
             }
         }
 
-        async function assignMediator(caseId) {
+        async function assignMediator() {
             const mediator = prompt('Enter mediator name:');
             if (!mediator) return;
 
             try {
-                const response = await window.authManager.apiRequest(`/admin/cases/${caseId}/assign`, {
-                    method: 'POST',
+                const response = await window.authManager.apiRequest(`/admin/cases/${currentCaseId}/status`, {
+                    method: 'PATCH',
                     body: JSON.stringify({
-                        status: 'In Review',
+                        status: 'In Mediation',
                         assigned_mediator: mediator
                     })
                 });
@@ -251,6 +293,26 @@
             } catch (error) {
                 console.error('Failed to assign mediator:', error);
                 alert('Failed to assign mediator: ' + error.message);
+            }
+        }
+
+        async function updateCaseStatus(status) {
+            try {
+                const response = await window.authManager.apiRequest(`/admin/cases/${currentCaseId}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ status })
+                });
+
+                if (response.ok) {
+                    alert(`Case status updated to ${status}`);
+                    loadCaseDetails();
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to update case status');
+                }
+            } catch (error) {
+                console.error('Failed to update case status:', error);
+                alert('Failed to update case status: ' + error.message);
             }
         }
 
@@ -270,8 +332,30 @@
             }
         }
 
+        // Utility functions
+        function formatDisputeType(type) {
+            const types = {
+                'consumer': 'Consumer Dispute',
+                'employment': 'Employment Dispute',
+                'contract': 'Contract Dispute',
+                'property': 'Property Dispute',
+                'family': 'Family Dispute',
+                'other': 'Other Dispute'
+            };
+            return types[type] || type;
+        }
+
+        function formatPriority(priority) {
+            const priorities = {
+                'high': 'High Priority',
+                'medium': 'Medium Priority',
+                'low': 'Low Priority'
+            };
+            return priorities[priority] || 'Medium Priority';
+        }
+
         // Load case details on page load
-        loadCaseDetails();
+        document.addEventListener('DOMContentLoaded', loadCaseDetails);
     </script>
 </body>
 </html>

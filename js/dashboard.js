@@ -1,9 +1,13 @@
-// Dashboard JavaScript - API-driven dashboard with NO localStorage usage
+// Dashboard JavaScript - API-driven dashboard with real-time updates
 class DashboardManager {
     constructor() {
         this.apiBase = '/api';
         this.user = null;
         this.autoRefreshInterval = null;
+        this.websocket = null;
+        this.isVisible = true;
+        this.refreshRate = 30000; // 30 seconds
+        this.lastUpdate = null;
         this.init();
     }
 
@@ -15,11 +19,14 @@ class DashboardManager {
             // Load dashboard data from API
             await this.loadDashboard();
             
-            // Set up auto-refresh
-            this.setupAutoRefresh();
+            // Set up real-time updates
+            this.setupRealTimeUpdates();
             
             // Set up event listeners
             this.setupEventListeners();
+            
+            // Set up visibility change handling
+            this.setupVisibilityHandling();
             
         } catch (error) {
             console.error('Dashboard initialization failed:', error);
@@ -146,11 +153,96 @@ class DashboardManager {
         `).join('');
     }
 
-    setupAutoRefresh() {
-        // Refresh every 30 seconds with API calls
+    setupRealTimeUpdates() {
+        // Try WebSocket connection first, fallback to polling
+        this.initializeWebSocket();
+        
+        // Set up intelligent polling as backup
+        this.setupIntelligentPolling();
+        
+        // Add visual indicators for real-time status
+        this.addRealTimeIndicators();
+    }
+
+    initializeWebSocket() {
+        try {
+            // Attempt WebSocket connection for real-time updates
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws/dashboard`;
+            
+            this.websocket = new WebSocket(wsUrl);
+            
+            this.websocket.onopen = () => {
+                console.log('WebSocket connected for real-time updates');
+                this.updateConnectionStatus('connected');
+                
+                // Send authentication token
+                if (window.authManager.getToken) {
+                    this.websocket.send(JSON.stringify({
+                        type: 'auth',
+                        token: window.authManager.getToken()
+                    }));
+                }
+            };
+            
+            this.websocket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    this.handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error('WebSocket message parsing error:', error);
+                }
+            };
+            
+            this.websocket.onclose = () => {
+                console.log('WebSocket disconnected, falling back to polling');
+                this.updateConnectionStatus('polling');
+                this.websocket = null;
+            };
+            
+            this.websocket.onerror = (error) => {
+                console.warn('WebSocket error, using polling instead:', error);
+                this.updateConnectionStatus('polling');
+            };
+            
+        } catch (error) {
+            console.warn('WebSocket not available, using polling:', error);
+            this.updateConnectionStatus('polling');
+        }
+    }
+
+    setupIntelligentPolling() {
+        // Smart polling that adjusts based on activity and visibility
         this.autoRefreshInterval = setInterval(() => {
-            this.loadDashboardData().catch(console.error);
-        }, 30000);
+            if (this.isVisible && !this.websocket) {
+                // Only poll if page is visible and WebSocket is not connected
+                this.performIntelligentRefresh();
+            }
+        }, this.refreshRate);
+    }
+
+    async performIntelligentRefresh() {
+        try {
+            // Show subtle loading indicator
+            this.showRefreshIndicator(true);
+            
+            // Load data with timestamp to check for changes
+            const newData = await this.loadDashboardData();
+            
+            // Update last refresh time
+            this.lastUpdate = new Date();
+            this.updateLastRefreshTime();
+            
+            // Hide loading indicator
+            this.showRefreshIndicator(false);
+            
+        } catch (error) {
+            console.error('Auto-refresh failed:', error);
+            this.showRefreshIndicator(false);
+            
+            // Show subtle error indication
+            this.showRefreshError();
+        }
     }
 
     setupEventListeners() {
@@ -234,10 +326,207 @@ class DashboardManager {
         return div.innerHTML;
     }
 
+    handleWebSocketMessage(data) {
+        switch (data.type) {
+            case 'case_update':
+                // Real-time case update
+                this.handleCaseUpdate(data.case);
+                break;
+            case 'stats_update':
+                // Real-time statistics update
+                this.updateStatistics(data.stats);
+                break;
+            case 'dashboard_refresh':
+                // Full dashboard refresh requested
+                this.loadDashboardData();
+                break;
+            default:
+                console.log('Unknown WebSocket message type:', data.type);
+        }
+    }
+
+    handleCaseUpdate(caseData) {
+        // Update specific case in the table without full refresh
+        const tbody = document.querySelector('#recentCasesTable tbody');
+        if (tbody) {
+            const existingRow = tbody.querySelector(`tr[data-case-id="${caseData.id}"]`);
+            if (existingRow) {
+                // Update existing row
+                existingRow.outerHTML = this.generateCaseRow(caseData);
+                this.highlightUpdatedRow(caseData.id);
+            } else {
+                // Add new case to top of list
+                const newRow = this.generateCaseRow(caseData);
+                tbody.insertAdjacentHTML('afterbegin', newRow);
+                this.highlightUpdatedRow(caseData.id);
+            }
+        }
+    }
+
+    generateCaseRow(case_) {
+        return `
+            <tr data-case-id="${case_.id}">
+                <td><strong>#${case_.id.slice(0, 8)}</strong></td>
+                <td>
+                    <div style="font-weight: 500;">${this.escapeHtml(case_.case_title)}</div>
+                </td>
+                <td>
+                    <span class="badge badge-${case_.case_type}">${this.formatDisputeType(case_.case_type)}</span>
+                </td>
+                <td>
+                    <span class="status-badge status-${case_.status}">${this.formatStatus(case_.status)}</span>
+                </td>
+                <td>${this.formatDate(case_.created_at)}</td>
+                <td>
+                    <a href="case-details.html?id=${case_.id}" class="btn-link">View Details</a>
+                </td>
+            </tr>
+        `;
+    }
+
+    highlightUpdatedRow(caseId) {
+        const row = document.querySelector(`tr[data-case-id="${caseId}"]`);
+        if (row) {
+            row.style.backgroundColor = '#e3f2fd';
+            setTimeout(() => {
+                row.style.backgroundColor = '';
+            }, 2000);
+        }
+    }
+
+    setupVisibilityHandling() {
+        // Handle page visibility changes to optimize polling
+        document.addEventListener('visibilitychange', () => {
+            this.isVisible = !document.hidden;
+            
+            if (this.isVisible) {
+                // Page became visible, refresh data
+                this.loadDashboardData();
+                this.updateConnectionStatus(this.websocket ? 'connected' : 'polling');
+            }
+        });
+
+        // Handle window focus/blur
+        window.addEventListener('focus', () => {
+            this.isVisible = true;
+            this.loadDashboardData();
+        });
+
+        window.addEventListener('blur', () => {
+            this.isVisible = false;
+        });
+    }
+
+    addRealTimeIndicators() {
+        // Add connection status indicator
+        const header = document.querySelector('.dashboard-header');
+        if (header) {
+            const statusIndicator = document.createElement('div');
+            statusIndicator.id = 'connectionStatus';
+            statusIndicator.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 12px;
+                color: #6b7280;
+                margin-left: auto;
+            `;
+            
+            header.appendChild(statusIndicator);
+        }
+
+        // Add last update time indicator
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            const lastUpdateEl = document.createElement('span');
+            lastUpdateEl.id = 'lastUpdate';
+            lastUpdateEl.style.cssText = `
+                font-size: 11px;
+                color: #9ca3af;
+                margin-left: 8px;
+            `;
+            refreshBtn.parentNode.insertBefore(lastUpdateEl, refreshBtn.nextSibling);
+        }
+    }
+
+    updateConnectionStatus(status) {
+        const statusEl = document.getElementById('connectionStatus');
+        if (!statusEl) return;
+
+        const statusConfig = {
+            connected: {
+                icon: '🟢',
+                text: 'Live updates',
+                color: '#10b981'
+            },
+            polling: {
+                icon: '🔄',
+                text: 'Auto-refresh (30s)',
+                color: '#f59e0b'
+            },
+            error: {
+                icon: '🔴',
+                text: 'Connection error',
+                color: '#ef4444'
+            }
+        };
+
+        const config = statusConfig[status] || statusConfig.error;
+        statusEl.innerHTML = `
+            <span style="font-size: 10px;">${config.icon}</span>
+            <span style="color: ${config.color};">${config.text}</span>
+        `;
+    }
+
+    updateLastRefreshTime() {
+        const lastUpdateEl = document.getElementById('lastUpdate');
+        if (lastUpdateEl && this.lastUpdate) {
+            const timeAgo = this.getTimeAgo(this.lastUpdate);
+            lastUpdateEl.textContent = `Updated ${timeAgo}`;
+        }
+    }
+
+    getTimeAgo(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+
+        if (diffSecs < 60) return 'just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        return `${Math.floor(diffMins / 60)}h ago`;
+    }
+
+    showRefreshIndicator(show) {
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            if (show) {
+                refreshBtn.style.opacity = '0.6';
+                refreshBtn.innerHTML = '⏳ Refreshing...';
+            } else {
+                refreshBtn.style.opacity = '1';
+                refreshBtn.innerHTML = '🔄 Refresh';
+            }
+        }
+    }
+
+    showRefreshError() {
+        const statusEl = document.getElementById('connectionStatus');
+        if (statusEl) {
+            statusEl.style.color = '#ef4444';
+            setTimeout(() => {
+                this.updateConnectionStatus(this.websocket ? 'connected' : 'polling');
+            }, 3000);
+        }
+    }
+
     // Cleanup
     destroy() {
         if (this.autoRefreshInterval) {
             clearInterval(this.autoRefreshInterval);
+        }
+        if (this.websocket) {
+            this.websocket.close();
         }
     }
 }
