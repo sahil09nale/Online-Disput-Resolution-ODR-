@@ -136,37 +136,80 @@
                             <span style="color: var(--medium-gray); font-size: 14px;">Total Cases:</span>
                             <span id="familyTotal" style="color: var(--charcoal); font-weight: 600;">0</span>
                         </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="../js/auth.js"></script>
     <script>
-        function loadDepartmentStats() {
-            const allCases = JSON.parse(localStorage.getItem('departmentCases') || '[]');
-            
+        // API-driven department selector - NO localStorage usage
+        async function loadDepartmentStats() {
+            try {
+                // Check authentication first
+                if (!window.authManager) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const authResult = await window.authManager.checkAuth();
+                if (!authResult.success) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Load department statistics from API
+                const response = await window.authManager.apiRequest('/admin/stats/departments');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayDepartmentStats(data.departments || {});
+                } else {
+                    console.error('Failed to load department stats');
+                    // Show default message
+                    const departments = ['consumer', 'employment', 'contract', 'property', 'business', 'family'];
+                    departments.forEach(dept => {
+                        const statElement = document.getElementById(`${dept}Stats`);
+                        if (statElement) {
+                            statElement.textContent = 'Loading...';
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load department stats:', error);
+            }
+        }
+
+        function displayDepartmentStats(departmentData) {
             const departments = ['consumer', 'employment', 'contract', 'property', 'business', 'family'];
             
             departments.forEach(dept => {
-                const deptCases = allCases.filter(c => c.type === dept);
-                const pendingCases = deptCases.filter(c => c.status === 'Pending');
-                
-                document.getElementById(`${dept}Total`).textContent = deptCases.length;
-                document.getElementById(`${dept}Pending`).textContent = pendingCases.length;
+                const statElement = document.getElementById(`${dept}Stats`);
+                if (statElement) {
+                    const count = departmentData[dept] || 0;
+                    statElement.textContent = `${count} active cases`;
+                }
             });
         }
+
+        async function logout() {
+            try {
+                if (window.authManager) {
+                    await window.authManager.logout();
+                }
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Initialize page on load
+        document.addEventListener('DOMContentLoaded', loadDepartmentStats);
 
         function selectDepartment(department) {
             window.location.href = `dept-${department}.html`;
         }
-
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'login.html';
-        }
-
-        loadDepartmentStats();
     </script>
 </body>
 </html>

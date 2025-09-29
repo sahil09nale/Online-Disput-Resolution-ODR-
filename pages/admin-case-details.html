@@ -31,34 +31,57 @@
     <script type="module" src="../js/supabase-storage.js"></script>
 
     <script>
-        function getUrlParams() {
-            const params = new URLSearchParams(window.location.search);
-            return {
-                caseId: params.get('id'),
-                department: params.get('dept')
-            };
+        // API-driven admin case details - NO localStorage usage
+        async function loadCaseDetails() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const caseId = urlParams.get('id');
+
+            if (!caseId) {
+                alert('Invalid case ID');
+                window.location.href = 'department.html';
+                return;
+            }
+
+            try {
+                // Check authentication first
+                if (!window.authManager) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const authResult = await window.authManager.checkAuth();
+                if (!authResult.success) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Load case from API
+                const response = await window.authManager.apiRequest(`/admin/cases/${caseId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load case details');
+                }
+                
+                const data = await response.json();
+                const caseData = data.case;
+
+                if (!caseData) {
+                    alert('Case not found');
+                    window.location.href = 'department.html';
+                    return;
+                }
+
+                // Display case details
+                displayCaseDetails(caseData);
+
+            } catch (error) {
+                console.error('Failed to load case details:', error);
+                alert('Failed to load case details: ' + error.message);
+                window.location.href = 'department.html';
+            }
         }
 
-        async function loadCaseDetails() {
-            const { caseId, department } = getUrlParams();
-            
-            if (!caseId) {
-                document.getElementById('caseDetails').innerHTML = '<p style="padding: 40px; text-align: center;">Case not found</p>';
-                return;
-            }
-
-            // Load case from department storage
-            const departmentCases = JSON.parse(localStorage.getItem(`dept_${department}_cases`) || '[]');
-            const caseData = departmentCases.find(c => c.id === caseId);
-
-            if (!caseData) {
-                document.getElementById('caseDetails').innerHTML = '<p style="padding: 40px; text-align: center;">Case not found</p>';
-                return;
-            }
-
-            // Load evidence files
-            const evidenceFiles = await loadEvidenceFiles(caseId, caseData.submitterUid);
-
+        function displayCaseDetails(caseData) {
             document.getElementById('caseDetails').innerHTML = `
                 <div style="padding: 32px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; border-bottom: 1px solid #e5e7eb; padding-bottom: 24px;">
@@ -179,47 +202,55 @@
             }
         }
 
-        function resolveCase(caseId, department) {
+        async function resolveCase(caseId) {
             const resolution = prompt('Enter resolution details:');
-            if (resolution) {
-                updateCaseStatus(caseId, department, 'Resolved', resolution);
-                alert('Case resolved successfully!');
-                loadCaseDetails(); // Reload to show resolution
+            if (!resolution) return;
+
+            try {
+                const response = await window.authManager.apiRequest(`/admin/cases/${caseId}/resolve`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        status: 'Resolved',
+                        resolution_notes: resolution
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Case resolved successfully!');
+                    loadCaseDetails(); // Reload to show resolution
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to resolve case');
+                }
+            } catch (error) {
+                console.error('Failed to resolve case:', error);
+                alert('Failed to resolve case: ' + error.message);
             }
         }
 
-        function assignMediator(caseId, department) {
+        async function assignMediator(caseId) {
             const mediator = prompt('Enter mediator name:');
-            if (mediator) {
-                updateCaseStatus(caseId, department, 'Active');
-                alert(`Case assigned to ${mediator}`);
-                loadCaseDetails();
-            }
-        }
+            if (!mediator) return;
 
-        function updateCaseStatus(caseId, department, newStatus, resolution = null) {
-            // Update department storage
-            const departmentCases = JSON.parse(localStorage.getItem(`dept_${department}_cases`) || '[]');
-            const caseIndex = departmentCases.findIndex(c => c.id === caseId);
-            if (caseIndex !== -1) {
-                departmentCases[caseIndex].status = newStatus;
-                departmentCases[caseIndex].resolvedAt = new Date().toISOString();
-                if (resolution) {
-                    departmentCases[caseIndex].resolution = resolution;
+            try {
+                const response = await window.authManager.apiRequest(`/admin/cases/${caseId}/assign`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        status: 'In Review',
+                        assigned_mediator: mediator
+                    })
+                });
+
+                if (response.ok) {
+                    alert(`Case assigned to ${mediator}`);
+                    loadCaseDetails();
+                } else {
+                    const data = await response.json();
+                    throw new Error(data.error || 'Failed to assign mediator');
                 }
-                localStorage.setItem(`dept_${department}_cases`, JSON.stringify(departmentCases));
-                
-                // Update user's case data
-                const userCases = JSON.parse(localStorage.getItem('userCases') || '[]');
-                const userCaseIndex = userCases.findIndex(c => c.id === caseId);
-                if (userCaseIndex !== -1) {
-                    userCases[userCaseIndex].status = newStatus;
-                    userCases[userCaseIndex].resolvedAt = new Date().toISOString();
-                    if (resolution) {
-                        userCases[userCaseIndex].resolution = resolution;
-                    }
-                    localStorage.setItem('userCases', JSON.stringify(userCases));
-                }
+            } catch (error) {
+                console.error('Failed to assign mediator:', error);
+                alert('Failed to assign mediator: ' + error.message);
             }
         }
 
@@ -227,9 +258,16 @@
             window.location.href = 'department.html';
         }
 
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'login.html';
+        async function logout() {
+            try {
+                if (window.authManager) {
+                    await window.authManager.logout();
+                }
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = 'login.html';
+            }
         }
 
         // Load case details on page load

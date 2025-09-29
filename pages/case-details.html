@@ -130,33 +130,48 @@
                         <button class="btn-primary" onclick="inviteOtherParty()" style="width: 100%;">Invite Other Party</button>
                         <button class="btn-secondary" onclick="requestMediator()" style="width: 100%;">Request Mediator</button>
                         <button class="btn-secondary" onclick="uploadAdditionalEvidence()" style="width: 100%;">Add Evidence</button>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="../js/auth.js"></script>
+    <script src="../js/case-details.js"></script>
     <script>
-        // Check if user is logged in
-        if (!localStorage.getItem('isLoggedIn')) {
-            window.location.href = 'login.html';
+        // API-driven case details - NO localStorage usage
+        async function initializePage() {
+            try {
+                // Check authentication via API
+                if (!window.authManager) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const authResult = await window.authManager.checkAuth();
+                if (!authResult.success) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Initialize case details manager (this will load case data via API)
+                if (window.caseDetailsManager) {
+                    // Case details manager will handle everything
+                    console.log('Case details manager initialized');
+                } else {
+                    console.error('Case details manager not available');
+                }
+
+            } catch (error) {
+                console.error('Page initialization failed:', error);
+                window.location.href = 'login.html';
+            }
         }
 
-        // Get case ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const caseId = urlParams.get('id');
-
+        // Legacy function for compatibility - now redirects to API-driven approach
         function loadCaseDetails() {
-            const cases = JSON.parse(localStorage.getItem('userCases') || '[]');
-            const caseData = cases.find(c => c.id === caseId);
-
-            if (!caseData) {
-                alert('Case not found');
-                window.location.href = 'dashboard.html';
-                return;
-            }
-
-            // Populate case details
+            console.log('Legacy loadCaseDetails called - using API-driven approach instead');
+            // The case-details.js manager handles this now
+            initializePage();
             document.getElementById('caseTitle').textContent = caseData.title || 'Untitled Case';
             document.getElementById('caseId').textContent = caseData.id;
             document.getElementById('caseType').textContent = caseData.disputeType || 'N/A';
@@ -244,13 +259,20 @@
             input.click();
         }
 
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'login.html';
+        async function logout() {
+            try {
+                if (window.authManager) {
+                    await window.authManager.logout();
+                }
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = 'login.html';
+            }
         }
 
-        // Load case details on page load
-        loadCaseDetails();
+        // Initialize page on load - API-driven approach
+        document.addEventListener('DOMContentLoaded', initializePage);
     </script>
 </body>
 </html>

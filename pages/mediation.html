@@ -178,16 +178,74 @@
         </div>
     </div>
 
+    <script src="../js/auth.js"></script>
     <script>
-        // Check if user is logged in and is mediator
-        if (!localStorage.getItem('isLoggedIn')) {
-            window.location.href = 'login.html';
+        // API-driven mediation page - NO localStorage usage
+        async function initializeMediationPage() {
+            try {
+                // Check authentication via API
+                if (!window.authManager) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const authResult = await window.authManager.checkAuth();
+                if (!authResult.success) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Check if user is mediator
+                if (!authResult.user.profile || authResult.user.profile.user_type !== 'mediator') {
+                    alert('Access denied. This page is for mediators only.');
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+
+                // Load mediation cases via API
+                await loadMediationCases();
+
+            } catch (error) {
+                console.error('Mediation page initialization failed:', error);
+                window.location.href = 'login.html';
+            }
         }
 
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        if (userData.userType !== 'mediator') {
-            alert('Access denied. This page is for mediators only.');
-            window.location.href = 'dashboard.html';
+        async function loadMediationCases() {
+            try {
+                // Load cases assigned to this mediator
+                const response = await window.authManager.apiRequest('/cases?status=In Mediation');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayMediationCases(data.cases || []);
+                } else {
+                    throw new Error('Failed to load mediation cases');
+                }
+            } catch (error) {
+                console.error('Failed to load mediation cases:', error);
+                document.getElementById('mediationCases').innerHTML = '<p style="color: #666; text-align: center;">Failed to load cases</p>';
+            }
+        }
+
+        function displayMediationCases(cases) {
+            const container = document.getElementById('mediationCases');
+            if (!cases || cases.length === 0) {
+                container.innerHTML = '<p style="color: #666; text-align: center;">No mediation cases assigned</p>';
+                return;
+            }
+
+            container.innerHTML = cases.map(case_ => `
+                <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+                    <h3 style="margin-bottom: 0.5rem;">${case_.case_title}</h3>
+                    <p style="color: #666; margin-bottom: 1rem;">Case ID: ${case_.id}</p>
+                    <p style="margin-bottom: 1rem;">${case_.description}</p>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="startMediation('${case_.id}')" class="btn-primary">Start Mediation</button>
+                        <button onclick="viewCaseDetails('${case_.id}')" class="btn-secondary">View Details</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function sendMessage() {
@@ -249,10 +307,29 @@
             }
         }
 
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'login.html';
+        async function logout() {
+            try {
+                if (window.authManager) {
+                    await window.authManager.logout();
+                }
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = 'login.html';
+            }
         }
+
+        function startMediation(caseId) {
+            alert(`Starting mediation session for case ${caseId}`);
+            // Implement mediation session logic here
+        }
+
+        function viewCaseDetails(caseId) {
+            window.location.href = `case-details.html?id=${caseId}`;
+        }
+
+        // Initialize page on load
+        document.addEventListener('DOMContentLoaded', initializeMediationPage);
 
         // Allow Enter key to send messages
         document.getElementById('messageInput').addEventListener('keypress', function(e) {

@@ -134,47 +134,40 @@
                 if (window.authManager) {
                     await window.authManager.logout();
                 } else {
-                    // Fallback logout
-                    localStorage.removeItem('isLoggedIn');
-                    localStorage.removeItem('user_data');
-                    localStorage.removeItem('auth_token');
+                    // Redirect to login if authManager not available
+                    window.location.href = 'login.html';
                 }
-                window.location.href = 'login.html';
             } catch (error) {
-                console.error('Logout error:', error);
-                // Force logout anyway
-                localStorage.clear();
+                // Force redirect to login
                 window.location.href = 'login.html';
             }
         }
 
-        function saveDraft() {
-            const formData = new FormData(document.getElementById('disputeForm'));
-            const draftData = Object.fromEntries(formData.entries());
-            draftData.isDraft = true;
-            draftData.savedAt = new Date().toISOString();
-            
-            localStorage.setItem('disputeDraft', JSON.stringify(draftData));
-            alert('Draft saved successfully!');
-        }
-
-        function loadDraft() {
-            const draft = JSON.parse(localStorage.getItem('disputeDraft') || '{}');
-            if (draft.isDraft) {
-                Object.keys(draft).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element && key !== 'isDraft' && key !== 'savedAt') {
-                        if (element.type === 'checkbox') {
-                            element.checked = draft[key] === 'on';
-                        } else {
-                            element.value = draft[key];
-                        }
-                    }
-                });
+        async function saveDraft() {
+            try {
+                const formData = new FormData(document.getElementById('disputeForm'));
+                const draftData = Object.fromEntries(formData.entries());
+                
+                // Save draft via API (you can implement this endpoint later)
+                // For now, just show a message that draft saving is not implemented
+                alert('Draft saving will be implemented with API integration. Please submit your case or keep the form open.');
+            } catch (error) {
+                console.error('Save draft error:', error);
+                alert('Failed to save draft. Please submit your case or keep the form open.');
             }
         }
 
-        // File upload handling
+        async function loadDraft() {
+            try {
+                // Load draft via API (you can implement this endpoint later)
+                // For now, no draft loading functionality
+                console.log('Draft loading will be implemented with API integration');
+            } catch (error) {
+                console.error('Load draft error:', error);
+            }
+        }
+
+        // File upload handling - API-driven, no localStorage
         let currentTempCaseId = null;
         document.getElementById('evidence').addEventListener('change', async function(e) {
             const files = Array.from(e.target.files);
@@ -185,33 +178,18 @@
             
             uploadContainer.style.display = 'block';
             
-            for (let file of files) {
-                try {
-                    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                    if (!currentTempCaseId) {
-                        currentTempCaseId = 'temp_' + Date.now();
-                    }
-                    
-                    const fileData = await window.FileUploadManager.uploadFile(file, currentTempCaseId, userData.email);
-                    
-                    // Add to uploaded files list
-                    const fileDiv = document.createElement('div');
-                    fileDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f9fafb; border-radius: 6px; margin-bottom: 0.5rem;';
-                    fileDiv.innerHTML = `
-                        <div>
-                            <span style="font-weight: 500;">${file.name}</span>
-                            <span style="color: #6b7280; font-size: 0.875rem; margin-left: 0.5rem;">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                        </div>
-                        <button type="button" onclick="this.parentElement.remove()" style="color: #ef4444; background: none; border: none; cursor: pointer;">✕</button>
-                    `;
-                    uploadedFilesDiv.appendChild(fileDiv);
-                    
-                } catch (error) {
-                    alert(`Failed to upload ${file.name}: ${error.message}`);
-                }
-            }
-            
-            uploadContainer.style.display = 'none';
+            // Display selected files (will be uploaded when case is submitted)
+            uploadedFilesDiv.innerHTML = '';
+            files.forEach(file => {
+                const fileDiv = document.createElement('div');
+                fileDiv.style.cssText = 'padding: 8px; border: 1px solid #ddd; margin: 4px 0; border-radius: 4px;';
+                fileDiv.innerHTML = `
+                    <span style="font-weight: 500;">${file.name}</span>
+                    <span style="color: #666; margin-left: 8px;">(${(file.size / 1024).toFixed(1)} KB)</span>
+                    <span style="color: #28a745; margin-left: 8px;">Ready to upload</span>
+                `;
+                uploadedFilesDiv.appendChild(fileDiv);
+            });
         });
 
         document.getElementById('disputeForm').addEventListener('submit', async function(e) {
@@ -230,45 +208,27 @@
                 ...disputeData
             };
 
-            // Reassign any temp evidence to the final case ID and load files
-            if (currentTempCaseId) {
-                try {
-                    await window.FileUploadManager.reassignFiles(currentTempCaseId, caseData.id);
-                } catch (err) {
-                    console.error('Failed to reassign evidence:', err);
-                }
-            }
-
-            const filesForCase = await window.FileUploadManager.getFiles(caseData.id);
-            caseData.hasEvidence = (filesForCase && filesForCase.length > 0);
-            caseData.evidenceCount = filesForCase ? filesForCase.length : 0;
-            caseData.evidenceFiles = (filesForCase || []).map(f => ({ 
-                fileName: f.fileName, 
-                uploadedAt: f.uploadedAt,
-                downloadURL: f.downloadURL 
-            }));
-
-            // Submit to server only
+            // Submit case to server via API
             try {
-                if (!window.authManager || !window.authManager.isAuthenticated()) {
-                    throw new Error('Not authenticated');
+                if (!window.authManager) {
+                    throw new Error('Authentication manager not available');
                 }
                 
-                const response = await window.authManager.authenticatedFetch('/api/cases/submit', {
+                const response = await window.authManager.apiRequest('/api/cases/submit', {
                     method: 'POST',
                     body: JSON.stringify({
-                        disputeType: caseData.type,
-                        disputeAmount: parseFloat(caseData.disputeAmount) || 0,
-                        description: caseData.description,
-                        respondentName: caseData.otherParty,
-                        respondentEmail: caseData.otherPartyEmail,
-                        evidenceFiles: caseData.evidenceFiles || []
+                        caseTitle: disputeData.disputeTitle,
+                        disputeType: disputeData.disputeType,
+                        description: disputeData.description,
+                        disputeAmount: parseFloat(disputeData.disputeAmount) || null,
+                        preferredResolution: disputeData.preferredResolution,
+                        urgencyLevel: disputeData.urgencyLevel || 'medium'
                     })
                 });
                 
                 if (!response.ok) {
                     const error = await response.json();
-                    throw new Error(error.message || 'Failed to submit case');
+                    throw new Error(error.error || 'Failed to submit case');
                 }
                 
                 const result = await response.json();
@@ -280,8 +240,7 @@
                 return;
             }
 
-            // Clear draft only
-            localStorage.removeItem('disputeDraft');
+            // Case submitted successfully - no localStorage cleanup needed
 
             // Show AI analysis simulation
             showAIAnalysis(caseData);
