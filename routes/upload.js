@@ -28,26 +28,22 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-    files: 5 // Maximum 5 files per request
-  }
 });
 
-// Upload files for a case (client-side implementation)
-router.post('/case/:caseId', upload.array('files', 5), async (req, res) => {
+// Upload file to case (handles actual file upload to Supabase Storage)
+router.post('/case/:caseId', upload.single('file'), async (req, res) => {
   try {
     const { caseId } = req.params;
-    const files = req.files;
+    const file = req.file;
 
-    if (!files || files.length === 0) {
+    if (!file) {
       return res.status(400).json({
-        error: 'No files provided',
-        code: 'NO_FILES'
+        error: 'No file provided',
+        code: 'NO_FILE'
       });
     }
 
-    // Verify case exists and user owns it
+    // Validate case ownership
     const { data: case_, error: caseError } = await req.supabase
       .from('cases')
       .select('id, user_id')
@@ -62,37 +58,77 @@ router.post('/case/:caseId', upload.array('files', 5), async (req, res) => {
       });
     }
 
-    // For client-side upload, return file metadata for frontend to handle upload
-    const fileMetadata = files.map(file => ({
-      originalName: file.originalname,
-      size: file.size,
-      type: file.mimetype,
-      buffer: file.buffer.toString('base64'), // Convert to base64 for client-side upload
-      suggestedPath: `cases/${caseId}/${uuidv4()}${path.extname(file.originalname)}`
-    }));
+    // Generate unique filename
+    const fileExtension = path.extname(file.originalname);
+    const uniqueFilename = `${uuidv4()}${fileExtension}`;
+    const filePath = `case-files/${caseId}/${uniqueFilename}`;
+
+    // Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await req.supabase.storage
+      .from('case-files')
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Supabase storage upload error:', uploadError);
+      return res.status(400).json({
+        error: 'Failed to upload file to storage',
+        details: uploadError.message,
+        code: 'STORAGE_UPLOAD_ERROR'
+      });
+    }
+
+    // Record file metadata in database
+    const { data: fileRecord, error: dbError } = await req.supabase
+      .from('case_files')
+      .insert({
+        case_id: caseId,
+        file_name: file.originalname,
+        file_path: uploadData.path,
+        file_size: file.size,
+        file_type: file.mimetype,
+        uploaded_by: req.user.id
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      // If database insert fails, try to clean up the uploaded file
+      await req.supabase.storage
+        .from('case-files')
+        .remove([uploadData.path]);
+        
+      return res.status(400).json({
+        error: 'Failed to record file upload',
+        code: 'RECORD_ERROR'
+      });
+    }
+
+    // Update case timestamp
+    await req.supabase
+      .from('cases')
+      .update({ last_updated: new Date().toISOString() })
+      .eq('id', caseId);
 
     res.json({
       success: true,
-      message: 'Files prepared for upload',
-      files: fileMetadata,
-      uploadInstructions: {
-        bucket: 'case-files',
-        caseId: caseId,
-        note: 'Use Supabase client-side upload with these file details'
-      }
+      message: 'File uploaded successfully',
+      file: fileRecord
     });
 
   } catch (error) {
-    console.error('Upload preparation error:', error);
+    console.error('File upload error:', error);
     res.status(500).json({
-      error: 'Failed to prepare file upload',
-      code: 'UPLOAD_PREP_ERROR'
+      error: 'Failed to upload file',
+      code: 'UPLOAD_ERROR'
     });
   }
 });
 
 // Get files for a case
-router.get('/case/:caseId', async (req, res) => {
+router.get('/case/:caseId/files', async (req, res) => {
   try {
     const { caseId } = req.params;
 

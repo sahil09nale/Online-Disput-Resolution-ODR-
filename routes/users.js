@@ -71,11 +71,26 @@ router.patch('/profile', [
     // Add updated timestamp
     updates.updated_at = new Date().toISOString();
 
-    // Note: Profile updates now need to be handled via Supabase Auth user metadata updates
-    // This requires a different approach since we're not using service role
-    res.status(501).json({
-      error: 'Profile updates not implemented without service role',
-      code: 'NOT_IMPLEMENTED'
+    // Update user profile in database
+    const { data: updatedUser, error } = await req.supabase
+      .from('users')
+      .update(updates)
+      .eq('id', req.user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Profile update error:', error);
+      return res.status(400).json({
+        error: 'Failed to update profile',
+        details: error.message
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: updatedUser
     });
 
   } catch (error) {
@@ -87,34 +102,36 @@ router.patch('/profile', [
   }
 });
 
-// Change password
-router.patch('/change-password', [
-  body('currentPassword').notEmpty().withMessage('Current password is required'),
-  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
-], async (req, res) => {
+// Change password endpoint
+router.patch('/password', async (req, res) => {
   try {
-    // Check validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
+    const { currentPassword, newPassword } = req.body;
+    
+    // Validate input
+    if (!currentPassword || !newPassword) {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: errors.array()
+        error: 'Current password and new password are required'
       });
     }
 
-    const { currentPassword, newPassword } = req.body;
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        error: 'New password must be at least 6 characters long'
+      });
+    }
 
-    // Password changes require service role - not implemented without it
-    res.status(501).json({
-      error: 'Password changes not implemented without service role',
-      code: 'NOT_IMPLEMENTED'
+    // Password changes should be handled on the frontend using Supabase client
+    res.json({
+      success: true,
+      message: 'Password change should be handled on the frontend using Supabase Auth',
+      instructions: 'Use supabase.auth.updateUser({ password: newPassword }) on the frontend'
     });
 
   } catch (error) {
-    console.error('Change password error:', error);
+    console.error('Password change error:', error);
     res.status(500).json({
-      error: 'Failed to change password',
-      code: 'PASSWORD_CHANGE_ERROR'
+      error: 'Internal server error',
+      message: 'Failed to process password change'
     });
   }
 });
