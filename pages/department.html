@@ -76,120 +76,14 @@
     </div>
   </div>
 
-  <!-- Secure Supabase Evidence Manager for admin-case-details navigation -->
-  <script src="../js/config.js"></script>
-  <script type="module" src="../js/supabase-config.js"></script>
-  <script type="module" src="../js/supabase-storage.js"></script>
-
-  <script>
-    const DEPT_META = {
-      consumer: { label: 'Consumer Department', sub: 'Manage consumer complaints and disputes', tag: 'Consumer' },
-      employment: { label: 'Employment Department', sub: 'Manage employment disputes and workplace issues', tag: 'Employment' },
-      contract: { label: 'Contract Department', sub: 'Manage contract disputes and business agreements', tag: 'Contract' },
-      property: { label: 'Property Department', sub: 'Manage property disputes and real estate conflicts', tag: 'Property' },
-      business: { label: 'Business Department', sub: 'Manage business disputes and commercial conflicts', tag: 'Business' },
-      family: { label: 'Family Department', sub: 'Manage family disputes and domestic conflicts', tag: 'Family' }
-    };
-
-    function ensureAdmin() {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      if (!userData || userData.userType !== 'admin' || !userData.department) {
-        alert('Access denied. Department admin privileges required.');
-        window.location.href = 'dashboard.html';
-        return null;
-      }
-      return userData;
-    }
-
-    function setDeptUI(dept) {
-      const meta = DEPT_META[dept] || { label: 'Department', sub: 'Manage cases', tag: 'Case' };
-      document.getElementById('deptLabel').textContent = meta.label;
-      document.getElementById('deptTitle').textContent = `${meta.label} Dashboard`;
-      document.getElementById('deptSubtitle').textContent = meta.sub;
-      document.getElementById('casesHeader').textContent = `${meta.tag} Cases`;
-      document.getElementById('casesSubheader').textContent = `Review and manage ${meta.tag.toLowerCase()}-related cases`;
-    }
-
-    function storageKeyForDept(dept) {
-      return `dept_${dept}_cases`;
-    }
-
-    function loadDepartmentCases() {
-      const userData = ensureAdmin();
-      if (!userData) return;
-      const dept = userData.department;
-      setDeptUI(dept);
-
-      const key = storageKeyForDept(dept);
-      const cases = JSON.parse(localStorage.getItem(key) || '[]');
-      const tbody = document.getElementById('casesTableBody');
-      if (cases.length === 0) return;
-
-      tbody.innerHTML = '';
-      cases.forEach(c => {
-        const evidenceIcon = c.hasEvidence ? '📎' : '';
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td style="font-weight: 600; color: var(--deep-blue);">${c.id} ${evidenceIcon}</td>
-          <td>${c.submittedBy}</td>
-          <td>${c.otherParty}</td>
-          <td style="font-weight: 600; color: var(--deep-blue);">$${c.disputeAmount || '0'}</td>
-          <td><span class="status-badge status-${(c.status||'Pending').toLowerCase()}">${c.status || 'Pending'}</span></td>
-          <td style="color: var(--medium-gray);">${new Date(c.submittedAt).toLocaleDateString()}</td>
-          <td>
-            <button onclick="reviewCase('${c.id}', '${dept}')" style="background: none; border: none; color: var(--teal); cursor: pointer; font-weight: 500;">Review</button>
-            <button onclick="resolveCase('${c.id}', '${dept}')" style="background: none; border: none; color: var(--success); cursor: pointer; font-weight: 500; margin-left: 8px;">Resolve</button>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-
-      document.getElementById('totalCases').textContent = cases.length;
-      document.getElementById('pendingCases').textContent = cases.filter(c => c.status === 'Pending').length;
-      document.getElementById('activeCases').textContent = cases.filter(c => c.status === 'Active').length;
-      document.getElementById('resolvedCases').textContent = cases.filter(c => c.status === 'Resolved').length;
-    }
-
-    function reviewCase(caseId, dept) {
-      window.location.href = `admin-case-details.html?id=${caseId}&dept=${dept}`;
-    }
-
-    function resolveCase(caseId, dept) {
-      const resolution = prompt('Enter resolution details:');
-      if (resolution) {
-        updateCaseStatus(caseId, dept, 'Resolved', resolution);
-        alert(`Case ${caseId} has been resolved successfully!`);
-      }
-    }
-
-    function updateCaseStatus(caseId, dept, newStatus, resolution = null) {
-      const key = storageKeyForDept(dept);
-      const deptCases = JSON.parse(localStorage.getItem(key) || '[]');
-      const idx = deptCases.findIndex(c => c.id === caseId);
-      if (idx !== -1) {
-        deptCases[idx].status = newStatus;
-        deptCases[idx].resolvedAt = new Date().toISOString();
-        if (resolution) deptCases[idx].resolution = resolution;
-        localStorage.setItem(key, JSON.stringify(deptCases));
-
-        const userCases = JSON.parse(localStorage.getItem('userCases') || '[]');
-        const uIdx = userCases.findIndex(c => c.id === caseId);
-        if (uIdx !== -1) {
-          userCases[uIdx].status = newStatus;
-          userCases[uIdx].resolvedAt = new Date().toISOString();
-          if (resolution) userCases[uIdx].resolution = resolution;
-          localStorage.setItem('userCases', JSON.stringify(userCases));
-        }
-
-        loadDepartmentCases();
-      }
-    }
-
-    async function logout() {
-      await authManager.logout();
-    }
-
-    document.addEventListener('DOMContentLoaded', loadDepartmentCases);
-  </script>
+  <!-- Loading and Error Elements -->
+  <div id="adminLoading" style="display: none; text-align: center; padding: 40px;">
+    <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+    <div>Loading department data...</div>
+  </div>
+  
+  <div id="adminError" style="display: none; background: #fee; color: #c33; padding: 16px; border-radius: 6px; margin: 20px; border: 1px solid #fcc;">
+    Error loading data
+  </div>
 </body>
 </html>

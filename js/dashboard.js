@@ -1,25 +1,26 @@
-// Dashboard JavaScript - Connects to ResolveNOW Backend API
+// Dashboard JavaScript - API-driven dashboard with NO localStorage usage
 class DashboardManager {
     constructor() {
         this.apiBase = '/api';
         this.user = null;
-        this.refreshInterval = null;
+        this.autoRefreshInterval = null;
         this.init();
     }
 
     async init() {
         try {
-            // Check authentication and get user data
+            // Check authentication via API only
             await this.checkAuth();
             
-            // Load dashboard data
-            await this.loadDashboardData();
+            // Load dashboard data from API
+            await this.loadDashboard();
             
-            // Set up auto-refresh (every 30 seconds)
-            this.startAutoRefresh();
+            // Set up auto-refresh
+            this.setupAutoRefresh();
             
             // Set up event listeners
             this.setupEventListeners();
+            
         } catch (error) {
             console.error('Dashboard initialization failed:', error);
             this.redirectToLogin();
@@ -27,174 +28,101 @@ class DashboardManager {
     }
 
     async checkAuth() {
-        try {
-            const response = await fetch(`${this.apiBase}/auth/me`, {
-                method: 'GET',
-                credentials: 'include', // Include HTTP-only cookies
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+        const authResult = await window.authManager.checkAuth();
+        if (!authResult.success) {
+            throw new Error('Authentication required');
+        }
+        this.user = authResult.user;
+        
+        // Update user info in UI
+        this.updateUserInfo();
+    }
 
-            if (!response.ok) {
-                throw new Error('Authentication failed');
-            }
-
-            const data = await response.json();
-            this.user = data.user;
-            
-            // Update welcome message
-            const welcomeElement = document.getElementById('userWelcome');
-            if (welcomeElement && this.user.profile) {
-                welcomeElement.textContent = `Welcome, ${this.user.profile.full_name || this.user.email}`;
-            }
-
-            // Show role-specific sections
-            this.showRoleSpecificSections();
-            
-        } catch (error) {
-            console.error('Authentication check failed:', error);
-            throw error;
+    updateUserInfo() {
+        const userNameEl = document.getElementById('userName');
+        const userEmailEl = document.getElementById('userEmail');
+        
+        if (userNameEl && this.user.profile?.full_name) {
+            userNameEl.textContent = this.user.profile.full_name;
+        }
+        if (userEmailEl) {
+            userEmailEl.textContent = this.user.email;
         }
     }
 
-    showRoleSpecificSections() {
-        if (!this.user?.profile?.user_type) return;
-
-        const userType = this.user.profile.user_type;
-        
-        // Show mediator section for mediators
-        if (userType === 'mediator') {
-            const mediatorSection = document.getElementById('mediatorSection');
-            if (mediatorSection) {
-                mediatorSection.style.display = 'block';
-            }
-        }
-
-        // Show lawyer section for lawyers
-        if (userType === 'lawyer') {
-            const lawyerSection = document.getElementById('lawyerSection');
-            if (lawyerSection) {
-                lawyerSection.style.display = 'block';
-            }
+    async loadDashboard() {
+        try {
+            this.showLoading(true);
+            
+            // Load ALL data from API - no localStorage
+            await this.loadDashboardData();
+            
+        } catch (error) {
+            console.error('Failed to load dashboard:', error);
+            this.showError('Failed to load dashboard data');
+        } finally {
+            this.showLoading(false);
         }
     }
 
     async loadDashboardData() {
         try {
-            // Load user dashboard data
-            await this.loadUserDashboard();
+            // Load dashboard statistics from API
+            const statsResponse = await window.authManager.apiRequest('/cases/stats/dashboard');
             
-            // Load role-specific data
-            if (this.user?.profile?.user_type === 'mediator') {
-                await this.loadMediationCases();
+            if (!statsResponse.ok) {
+                throw new Error('Failed to load dashboard statistics');
             }
             
-            if (this.user?.profile?.user_type === 'lawyer') {
-                await this.loadLawyerCases();
+            const statsData = await statsResponse.json();
+            
+            // Load user cases from API
+            const casesResponse = await window.authManager.apiRequest('/cases?limit=5');
+            
+            if (!casesResponse.ok) {
+                throw new Error('Failed to load user cases');
             }
+            
+            const casesData = await casesResponse.json();
+            
+            // Update UI with live API data
+            this.updateStatistics(statsData.stats);
+            this.updateRecentCases(casesData.cases);
+            
+            return {
+                stats: statsData.stats,
+                cases: casesData.cases
+            };
             
         } catch (error) {
             console.error('Failed to load dashboard data:', error);
             this.showError('Failed to load dashboard data. Please refresh the page.');
-        }
-    }
-
-    async loadUserDashboard() {
-        try {
-            const response = await fetch(`${this.apiBase}/users/dashboard`, {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Dashboard API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.success && data.dashboard) {
-                this.updateStatistics(data.dashboard.stats);
-                this.updateRecentCases(data.dashboard.recentActivity);
-            }
-            
-        } catch (error) {
-            console.error('Failed to load user dashboard:', error);
-            // Fallback to cases endpoint
-            await this.loadCasesData();
-        }
-    }
-
-    async loadCasesData() {
-        try {
-            const response = await fetch(`${this.apiBase}/cases`, {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Cases API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.success && data.cases) {
-                // Calculate statistics from cases data
-                const stats = this.calculateStats(data.cases);
-                this.updateStatistics(stats);
-                this.updateRecentCases(data.cases.slice(0, 10)); // Show recent 10 cases
-            }
-            
-        } catch (error) {
-            console.error('Failed to load cases data:', error);
             throw error;
         }
     }
 
-    calculateStats(cases) {
-        return {
-            totalCases: cases.length,
-            pendingCases: cases.filter(c => c.status === 'Pending').length,
-            inReviewCases: cases.filter(c => c.status === 'In Review').length,
-            resolvedCases: cases.filter(c => c.status === 'Resolved').length
-        };
-    }
-
     updateStatistics(stats) {
-        // Update stat cards
+        // Update stat cards with live API data
         const totalCasesEl = document.getElementById('totalCases');
         const activeCasesEl = document.getElementById('activeCases');
         const resolvedCasesEl = document.getElementById('resolvedCases');
         const pendingCasesEl = document.getElementById('pendingCases');
 
-        if (totalCasesEl) totalCasesEl.textContent = stats.totalCases || 0;
-        if (activeCasesEl) activeCasesEl.textContent = (stats.pendingCases || 0) + (stats.inReviewCases || 0);
-        if (resolvedCasesEl) resolvedCasesEl.textContent = stats.resolvedCases || 0;
-        if (pendingCasesEl) pendingCasesEl.textContent = stats.pendingCases || 0;
+        if (totalCasesEl) totalCasesEl.textContent = stats.total || 0;
+        if (activeCasesEl) activeCasesEl.textContent = (stats.pending + stats.in_review) || 0;
+        if (resolvedCasesEl) resolvedCasesEl.textContent = stats.resolved || 0;
+        if (pendingCasesEl) pendingCasesEl.textContent = stats.pending || 0;
     }
 
     updateRecentCases(cases) {
-        const tbody = document.getElementById('casesTableBody');
-        if (!tbody) return;
+        const tbody = document.querySelector('#recentCasesTable tbody');
+        if (!tbody) {
+            console.warn('Recent cases table not found');
+            return;
+        }
 
         if (!cases || cases.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 48px 24px; color: var(--medium-gray);">
-                        <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">📋</div>
-                        <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">No cases found</div>
-                        <div style="font-size: 14px;">
-                            <a href="submit-dispute.html" style="color: var(--teal); text-decoration: none; font-weight: 500;">Submit your first case</a> to get started
-                        </div>
-                    </td>
-                </tr>
-            `;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #666;">No cases found</td></tr>';
             return;
         }
 
@@ -218,110 +146,56 @@ class DashboardManager {
         `).join('');
     }
 
-    async loadMediationCases() {
-        // This would require additional backend endpoints for mediator-specific cases
-        // For now, show placeholder message
-        console.log('Mediation cases loading not implemented yet');
-    }
-
-    async loadLawyerCases() {
-        // This would require additional backend endpoints for lawyer-specific cases
-        // For now, show placeholder message
-        console.log('Lawyer cases loading not implemented yet');
-    }
-
-    startAutoRefresh() {
-        // Refresh dashboard data every 30 seconds
-        this.refreshInterval = setInterval(() => {
-            this.loadDashboardData();
+    setupAutoRefresh() {
+        // Refresh every 30 seconds with API calls
+        this.autoRefreshInterval = setInterval(() => {
+            this.loadDashboardData().catch(console.error);
         }, 30000);
     }
 
-    stopAutoRefresh() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
+    setupEventListeners() {
+        // Refresh button
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                this.loadDashboard();
+            });
+        }
+
+        // Quick action buttons
+        const submitCaseBtn = document.getElementById('submitCaseBtn');
+        if (submitCaseBtn) {
+            submitCaseBtn.addEventListener('click', () => {
+                window.location.href = 'submit-dispute.html';
+            });
         }
     }
 
-    setupEventListeners() {
-        // Handle page visibility change to pause/resume auto-refresh
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                this.stopAutoRefresh();
-            } else {
-                this.startAutoRefresh();
-            }
-        });
-
-        // Handle window beforeunload to cleanup
-        window.addEventListener('beforeunload', () => {
-            this.stopAutoRefresh();
-        });
+    showLoading(show) {
+        const loadingEl = document.getElementById('dashboardLoading');
+        if (loadingEl) {
+            loadingEl.style.display = show ? 'block' : 'none';
+        }
     }
 
-    async logout() {
-        try {
-            const response = await fetch(`${this.apiBase}/auth/logout`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            // Always redirect to login, even if logout fails
-            this.redirectToLogin();
+    showError(message) {
+        const errorEl = document.getElementById('dashboardError');
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
             
-        } catch (error) {
-            console.error('Logout error:', error);
-            // Still redirect to login
-            this.redirectToLogin();
+            // Hide after 5 seconds
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
         }
     }
 
     redirectToLogin() {
-        window.location.href = 'login.html';
-    }
-
-    showError(message) {
-        // Create or update error message
-        let errorDiv = document.getElementById('dashboard-error');
-        if (!errorDiv) {
-            errorDiv = document.createElement('div');
-            errorDiv.id = 'dashboard-error';
-            errorDiv.style.cssText = `
-                background: #fee; 
-                color: #c33; 
-                padding: 12px 16px; 
-                border-radius: 6px; 
-                margin: 16px 0; 
-                border: 1px solid #fcc;
-            `;
-            
-            const dashboard = document.querySelector('.dashboard');
-            if (dashboard) {
-                dashboard.insertBefore(errorDiv, dashboard.firstChild);
-            }
-        }
-        
-        errorDiv.textContent = message;
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            if (errorDiv.parentNode) {
-                errorDiv.parentNode.removeChild(errorDiv);
-            }
-        }, 5000);
+        window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname);
     }
 
     // Utility functions
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
     formatDisputeType(type) {
         const types = {
             'consumer': 'Consumer',
@@ -353,27 +227,37 @@ class DashboardManager {
             day: 'numeric'
         });
     }
-}
 
-// Global logout function for navbar
-async function logout() {
-    if (window.dashboardManager) {
-        await window.dashboardManager.logout();
-    } else {
-        // Fallback logout
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-        } catch (error) {
-            console.error('Logout error:', error);
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Cleanup
+    destroy() {
+        if (this.autoRefreshInterval) {
+            clearInterval(this.autoRefreshInterval);
         }
-        window.location.href = 'login.html';
     }
 }
 
-// Initialize dashboard when DOM is loaded
+// Global logout function
+async function logout() {
+    if (window.authManager) {
+        await window.authManager.logout();
+    }
+    window.location.href = 'login.html';
+}
+
+// Initialize dashboard manager
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboardManager = new DashboardManager();
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (window.dashboardManager) {
+        window.dashboardManager.destroy();
+    }
 });

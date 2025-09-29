@@ -3,38 +3,35 @@ class AuthManager {
     constructor() {
         this.apiBase = '/api';
         this.user = null;
-        this.isAuthenticated = false;
     }
 
     // Check if user is authenticated by calling the backend
     async checkAuth() {
         try {
-            const response = await fetch(`${this.apiBase}/auth/me`, {
+            // Only check via API - no localStorage usage
+            const response = await fetch('/api/auth/profile', {
                 method: 'GET',
-                credentials: 'include', // Include HTTP-only cookies
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
 
             if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.user) {
-                    this.user = data.user;
-                    this.isAuthenticated = true;
-                    return { success: true, user: data.user };
-                }
+                const userData = await response.json();
+                this.user = userData.user;
+                this.isAuthenticated = true;
+                return { success: true, user: this.user };
+            } else {
+                this.user = null;
+                this.isAuthenticated = false;
+                return { success: false, error: 'Not authenticated' };
             }
-
-            this.user = null;
-            this.isAuthenticated = false;
-            return { success: false, error: 'Not authenticated' };
-
         } catch (error) {
             console.error('Auth check failed:', error);
             this.user = null;
             this.isAuthenticated = false;
-            return { success: false, error: 'Authentication check failed' };
+            return { success: false, error: error.message };
         }
     }
 

@@ -141,7 +141,7 @@ class AdminDashboardManager {
                     </div>
                 </td>
                 <td>
-                    <span class="badge badge-${case_.dispute_type}">${this.formatDisputeType(case_.dispute_type)}</span>
+                    <span class="badge badge-${case_.case_type}">${this.formatDisputeType(case_.case_type)}</span>
                 </td>
                 <td>
                     <span class="status-badge status-${case_.status}">${this.formatStatus(case_.status)}</span>
@@ -153,7 +153,7 @@ class AdminDashboardManager {
                 <td>
                     <div style="display: flex; gap: 8px;">
                         <a href="admin-case-details.html?id=${case_.id}" class="btn-link">Review</a>
-                        ${case_.status === 'pending' ? `<button onclick="quickResolve('${case_.id}')" class="btn-link">Quick Resolve</button>` : ''}
+                        ${case_.status === 'Pending' ? `<button onclick="quickResolve('${case_.id}')" class="btn-link">Quick Resolve</button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -199,7 +199,7 @@ class AdminDashboardManager {
         const resolution = prompt('Enter resolution details:');
         if (!resolution) return;
 
-        await this.updateCaseStatus(caseId, 'resolved', resolution);
+        await this.updateCaseStatus(caseId, 'Resolved', resolution);
     }
 
     startAutoRefresh() {
@@ -301,11 +301,11 @@ class AdminDashboardManager {
 
     formatStatus(status) {
         const statuses = {
-            'pending': 'Pending Review',
-            'in_review': 'Under Review',
-            'resolved': 'Resolved',
-            'rejected': 'Rejected',
-            'cancelled': 'Cancelled'
+            'Pending': 'Pending Review',
+            'In Review': 'Under Review',
+            'In Mediation': 'In Mediation',
+            'Resolved': 'Resolved',
+            'Closed': 'Closed'
         };
         return statuses[status] || status;
     }
