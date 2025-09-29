@@ -2,14 +2,13 @@
 class AuthManager {
     constructor() {
         this.apiBase = '/api';
-        this.user = null;
     }
 
     // Check if user is authenticated by calling the backend
     async checkAuth() {
         try {
-            // Only check via API - no localStorage usage
-            const response = await fetch('/api/auth/profile', {
+            // Only check via API - no localStorage
+            const response = await fetch('/api/auth/me', {
                 method: 'GET',
                 credentials: 'include',
                 headers: {

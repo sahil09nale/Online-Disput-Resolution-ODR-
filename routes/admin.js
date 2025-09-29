@@ -14,6 +14,18 @@ router.get('/cases', async (req, res) => {
     const { page = 1, limit = 20, status, urgency, search } = req.query;
     const offset = (page - 1) * limit;
 
+    // Map admin department to case types
+    const departmentToCaseTypes = {
+      'Consumer Affairs': ['consumer'],
+      'Employment': ['employment'],
+      'Legal': ['contract'],
+      'Property': ['property'],
+      'Family': ['family'],
+      'General': ['other']
+    };
+
+    const caseTypes = departmentToCaseTypes[req.user.department] || ['other'];
+
     let query = req.supabase
       .from('cases')
       .select(`
@@ -36,7 +48,7 @@ router.get('/cases', async (req, res) => {
           email
         )
       `)
-      .eq('assigned_department', req.user.department)
+      .in('case_type', caseTypes)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -159,13 +171,30 @@ router.patch('/cases/:id/status', [
       .from('cases')
       .select('*, user:users!cases_user_id_fkey(full_name, email)')
       .eq('id', id)
-      .eq('assigned_department', req.user.department)
       .single();
 
     if (fetchError || !currentCase) {
       return res.status(404).json({
-        error: 'Case not found or access denied',
+        error: 'Case not found',
         code: 'CASE_NOT_FOUND'
+      });
+    }
+
+    // Check if admin has access to this case type
+    const departmentToCaseTypes = {
+      'Consumer Affairs': ['consumer'],
+      'Employment': ['employment'],
+      'Legal': ['contract'],
+      'Property': ['property'],
+      'Family': ['family'],
+      'General': ['other']
+    };
+
+    const allowedCaseTypes = departmentToCaseTypes[req.user.department] || ['other'];
+    if (!allowedCaseTypes.includes(currentCase.case_type)) {
+      return res.status(403).json({
+        error: 'Access denied - case not in your department',
+        code: 'ACCESS_DENIED'
       });
     }
 
@@ -254,17 +283,34 @@ router.patch('/cases/:id/assign', [
     const { department, reason } = req.body;
 
     // Verify case exists and admin has access
-    const { data: case_, error: fetchError } = await supabaseAdmin
+    const { data: case_, error: fetchError } = await req.supabase
       .from('cases')
       .select('*')
       .eq('id', id)
-      .eq('assigned_department', req.user.department)
       .single();
 
     if (fetchError || !case_) {
       return res.status(404).json({
-        error: 'Case not found or access denied',
+        error: 'Case not found',
         code: 'CASE_NOT_FOUND'
+      });
+    }
+
+    // Check if admin has access to this case type
+    const departmentToCaseTypes = {
+      'Consumer Affairs': ['consumer'],
+      'Employment': ['employment'],
+      'Legal': ['contract'],
+      'Property': ['property'],
+      'Family': ['family'],
+      'General': ['other']
+    };
+
+    const allowedCaseTypes = departmentToCaseTypes[req.user.department] || ['other'];
+    if (!allowedCaseTypes.includes(case_.case_type)) {
+      return res.status(403).json({
+        error: 'Access denied - case not in your department',
+        code: 'ACCESS_DENIED'
       });
     }
 
@@ -305,11 +351,23 @@ router.patch('/cases/:id/assign', [
 // Get department statistics
 router.get('/stats/department', async (req, res) => {
   try {
+    // Map admin department to case types
+    const departmentToCaseTypes = {
+      'Consumer Affairs': ['consumer'],
+      'Employment': ['employment'],
+      'Legal': ['contract'],
+      'Property': ['property'],
+      'Family': ['family'],
+      'General': ['other']
+    };
+
+    const caseTypes = departmentToCaseTypes[req.user.department] || ['other'];
+
     // Get case counts by status for admin's department
     const { data: cases, error } = await req.supabase
       .from('cases')
       .select('status, urgency_level, created_at')
-      .eq('assigned_department', req.user.department);
+      .in('case_type', caseTypes);
 
     if (error) {
       return res.status(400).json({
